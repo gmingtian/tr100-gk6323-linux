@@ -1,0 +1,8 @@
+{
+  "usr/sbin/policy-rc.d": {
+    "exactBytesHex": "23212f62696e2f73680a6578697420313031",
+    "bytes": 18,
+    "otherwise": "preserve",
+    "note": "Conditional exception in remove-paths.json: remove only this exact regular source-cache policy, never a symlink or custom policy."
+  }
+}

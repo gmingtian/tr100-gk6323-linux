@@ -1,0 +1,16 @@
+{
+  "source": "../board-rom",
+  "sourceFiles": {
+    "symlinks.json": "878278960c00ec2da80c83556f6198cfca81ed785e6e5d6a28cea2ab40b2b8ba",
+    "file-modes.json": "035a8fb564c90b8048da292fdc993234bffb48dcc9297a8803c9349771411ca4",
+    "remove-paths.json": "00fb3ac8d0fd18de2498ea832df0f97fbceea51cefe431ea5d47c8484d6c4b0d",
+    "conditional-remove-paths.json": "b0c3f62564d5fdcca2c855dea918d1791e743c414667eeecf1b5f045284beb43",
+    "install-overlay.sh": "9cba2a4d5b56068653b3a331b54d443e44cc450fb3ae0edeea2ad22806eff2ac",
+    "prepare-identity.sh": "406304ec7fa2bfbd7d32a2e8e478c54710c96a764c69b78a1c1d99f865a74ab1",
+    "check-stage.sh": "f89d251dec45c4e785496eda0ec7029e4396f0060b8ad1bc55110c0b5c5002af",
+    "NETWORK-ACCESS.md": "228bdd231d5ee2e55551dee42fd64ad5d12e33287583f4c56696e27137b8b3f2",
+    "overlay/usr/local/sbin/tr100-rom-bootstrap": "cc0071d502bbbd6663c69af53335dc822656e30eeed4de83ddb630b6190c25b1"
+  },
+  "changedBehavior": "Only p8 root identity and exact pure map/geometry; no loop/p16 mode. Network/auth/udev/PID1 policy inherited.",
+  "oldWorkingDirectoryModified": false
+}

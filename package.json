@@ -1,0 +1,14 @@
+{
+  "name": "tr100-pure-linux-tools",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Experimental device-bound TR100 Linux tooling and offline source tests; no firmware binaries",
+  "engines": { "node": ">=22.15.0" },
+  "scripts": {
+    "test": "npm run test:node && npm run test:policy",
+    "test:node": "node --test tools/tests/tcp-file.test.cjs firmware-analysis/tools/tests/tftp.test.cjs firmware-analysis/tools/tests/full-initramfs.test.cjs && node --test --test-name-pattern=\"eight parts|root superblock|stream engine|gzip verification\" firmware-pure-linux/tools/tests/pure-linux-image.test.cjs",
+    "test:policy": "node --test-name-pattern=\"only p8|only one exact|new UUID/tag|handoff writes|marker reader|pure init refuses\" -e \"const cp=require('node:child_process');if(process.platform!=='win32'){const original=cp.spawnSync;cp.spawnSync=(file,...args)=>original(file==='C:/Program Files/Git/bin/bash.exe'?'bash':file,...args);}require('./firmware-analysis/tools/tests/pure-initramfs.test.cjs');require('./firmware-analysis/board-pure-linux/tests/layout.test.cjs');require('./firmware-analysis/board-pure-linux/tests/network-access.test.cjs');require('./firmware-analysis/board-pure-linux/tests/check-rom.cjs');\"",
+    "test:windows-guards": "node --test firmware-pure-linux/tools/tests/flash-pure-from-ram.test.cjs firmware-pure-linux/tools/tests/build-root-on-ram.test.cjs",
+    "test:device-fixtures": "node --test tools/tests/build-ramonly-boot.test.cjs firmware-analysis/tools/tests/pure-initramfs.test.cjs firmware-pure-linux/tools/tests/build-environment.test.cjs firmware-pure-linux/tools/tests/pure-linux-image.test.cjs firmware-pure-linux/tools/tests/package-pure-firmware.test.cjs firmware-analysis/board-pure-linux/research/probe-environment/test.cjs"
+  }
+}

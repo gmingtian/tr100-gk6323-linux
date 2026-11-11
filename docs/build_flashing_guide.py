@@ -1,0 +1,167 @@
+"""Build a standalone Chinese operating guide. Never connects to the device."""
+from pathlib import Path
+from html import escape
+
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / "docs" / "TR100纯Linux刷入指南.html"
+P = "216e44221aff6cf13f4cfeba8a2b97194a4a162220354a338b3fb8536b2db13f"
+E = "06ea929120af9e164f5ad6f6845ecff0a720cf25515ce051e6b717a5ff498885"
+K = "c4e63e9a104d126685885b33db2c231f7ece5b5babc85f03531cc263722de7c9"
+G = "d0dbbf2fe3a97ac8874b0dc5346e4922f81b851ee9f5ce705749a77d16baf942"
+R = "0a38283974f011256179a78b45edba6997dec51e16e90ec848265a67c42cdd46"
+OLD = "489debc75ac9c3e525f5ecb336a18521e062b8ff6c10ff6551e3d4da6eabd2ac"
+
+probe = r'''#!/bin/bash
+set -euo pipefail
+h() { local v; v=$(openssl dgst -sha256 "$1"); printf '%s\n' "${v##* }"; }
+test "$(uname -r)" = 3.18.24_gk6323v100c
+test -f /etc/tr100-ram-validation
+awk '$3!~/^0:/ {bad=1} $5=="/" {ok=($3=="0:2")} END{exit(bad||!ok)}' /proc/self/mountinfo
+test "$(awk 'END{print NR}' /proc/swaps)" = 1
+test "$(cat /sys/class/block/mmcblk0/size)" = 15269888
+test "$(cat /sys/class/block/mmcblk0p2/start)" = 8192
+test "$(cat /sys/class/block/mmcblk0p2/size)" = 8192
+test "$(cat /sys/class/block/mmcblk0p2/dev)" = 179:2
+test "$(stat -c '%t:%T' /dev/mmcblk0p2)" = b3:2
+test -b /dev/mmcblk0p2 && test ! -L /dev/mmcblk0p2
+disk=$(readlink -f /sys/class/block/mmcblk0)
+part=$(readlink -f /sys/class/block/mmcblk0p2)
+test "${part%/*}" = "$disk"
+test "$(readlink -f /sys/dev/block/179:2)" = "$part"
+test "$(h /dev/mmcblk0p1)" = fdc8847fafd9ef5ca006cb414561b99464b344deba1c16f8c223c0916f2c521e
+test "$(h /dev/mmcblk0p4)" = 94d6d4cc9d39a43b126d9b5075d39dac72b83c44aa6db269cf773ab4a4a870aa
+test "$(h /dev/mmcblk0p5)" = 4ff6abeff404e8eeb0f0f3816470b3d65a9261c2ed75c6e4ce48fbf7fcc2f939
+test "$(h /dev/mmcblk0p6)" = 9e56eb715425dd4e2f5e57f2211e4f69469104e3bbb1a473b666a463fa6a8237
+test "$(h /dev/mmcblk0p7)" = b325063170911917d7511c37b1718ed815639c5aea08c47127e8d94487cd199a
+f=/run/tr100/pure-flash/probe-bootargs-NOT-FINAL.bin
+test -f "$f" && test ! -L "$f"
+test "$(stat -f -c %T "$f")" = tmpfs
+test "$(stat -c %s "$f")" = 4194304
+test "$(h "$f")" = PROBE_SHA
+current=$(h /dev/mmcblk0p2)
+case "$current" in
+  OLD_SHA|FINAL_SHA|PROBE_SHA) ;;
+  *) echo 'REFUSED: unexpected current environment'; exit 1;;
+esac
+if [ "$current" != PROBE_SHA ]; then
+  /usr/bin/dd if="$f" of=/dev/mmcblk0p2 bs=1048576 count=4 iflag=fullblock conv=fsync status=none
+fi
+test "$(h /dev/mmcblk0p2)" = PROBE_SHA
+echo PROBE_ENV_FULL_READBACK_OK
+'''.replace("PROBE_SHA", P).replace("OLD_SHA", OLD).replace("FINAL_SHA", E)
+
+final = (ROOT / "docs/examples/final-environment-commit-reference.sh").read_text(encoding="utf-8")
+final = '#!/bin/bash\n' + final.replace('set -eu\n', 'set -euo pipefail\n', 1)
+marker = f'TR100_PURE DATA_WRITE_COMPLETE root_raw_sha256={R} kernel_prefix_bytes=9863168 kernel_prefix_sha256={K}'
+final = final.replace('set -euo pipefail\n', 'set -euo pipefail\ngrep -Fq -- ' + repr(marker) + ' /run/tr100/pure-flash/data-write.log\n', 1)
+
+pieces = []
+def para(t): pieces.append('<p>'+t+'</p>')
+def head(n,t): pieces.append(f'<h2 id="s{n}">{n}　{t}</h2>')
+def code(t, label="命令"):
+    pieces.append('<div class="label">'+escape(label)+'</div><pre><code>'+escape(t.strip())+'</code></pre>')
+def table(rows):
+    pieces.append('<table><tbody>'+''.join('<tr>'+''.join(('<th>' if i==0 else '<td>')+escape(c)+('</th>' if i==0 else '</td>') for c in row)+'</tr>' for i,row in enumerate(rows))+'</tbody></table>')
+
+pieces.append('<header><h1>数码视讯 TR100 纯 Linux 刷入指南</h1><p>本机适配记录与再次安装说明　2026年11月11日</p></header>')
+para('本机已经完成刷入并正常运行。本指南用于保留操作流程，<strong>阅读和下载文档不会触发刷机</strong>。只有需要重新安装时才执行写入步骤；重新刷入会清空现有 Linux 或 Android 的系统和用户数据。')
+para('此方案只针对本次验证的 GK6323V100C、2 GiB 内存、7818182656 字节 eMMC 设备。系统是 Armbian Bookworm armhf 用户态，复用厂商 3.18.24 内核。不是官方通用板型镜像，也不是 HiTool Android 升级包。不要直接复制到其他盒子，否则可能覆盖设备身份或无法启动。')
+pieces.append('<nav>'+''.join(f'<a href="#s{i}">{i} {t}</a>' for i,t in enumerate(['准备与文件校验','进入 fastboot','启动内存维护系统','连接维护系统','切换临时引导环境','正式写入 Linux','提交最终引导环境','重启与验收','故障处理','分区与校验值','环境写入命令附录'],1))+'</nav>')
+
+head(1,'准备与文件校验')
+para('准备原电源、网线、沿用本次已验证接线和电平的 TTL 线。盒子使用独立电源，TTL 的 VCC 不用于给盒子供电。串口参数为 COM4、115200、8N1、无流控。脚本与 SuperCom 不得同时占用 COM4。')
+para(r'电脑使用 Windows PowerShell 7、Node.js 22.15 或更高版本、OpenSSH 客户端和可用的 System.IO.Ports。将 <code>TR100-GK6323-Pure-Linux-20261111-final.zip</code> 解压到例如 <code>C:\TR100</code>，使 boot.img、rootfs.ext4.gz、maintenance 等直接位于该目录。以下 Windows 命令均从解压目录运行。')
+code(r'''Set-Location 'C:\TR100'
+New-Item -ItemType Directory -Path .\logs -Force | Out-Null
+$ErrorActionPreference = 'Stop'
+foreach ($line in Get-Content .\SHA256SUMS) {
+    if ($line -notmatch '^([a-f0-9]{64})  (.+)$') { throw '清单格式错误' }
+    $want = $Matches[1]; $file = $Matches[2]
+    if ((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLowerInvariant() -ne $want) {
+        throw "文件校验失败：$file"
+    }
+}
+'PACKAGE_SHA256_OK' ''', '电脑 PowerShell　只读校验')
+para('本次网络为电脑有线地址 <code>192.168.5.253/24</code>，维护系统为 <code>192.168.5.240/24</code>，路由器为 <code>192.168.5.1</code>。确认 5.240 没有其他设备占用。加载脚本写死这组维护地址；地址不同须先核对并同步修改 loader、boot、服务监听与本文连接命令，不能只改一处。最终系统使用 DHCP，不固定为维护地址。')
+
+head(2,'进入 fastboot')
+para('若当前 Linux 可以登录，先通过 SSH 执行 <code>sync; systemctl reboot</code>。在盒子启动早期通过 TTL 连续发送 Ctrl+C，直到看见 <code>fastboot#</code>。原厂 bootdelay 为 0，截停窗口很短；未截停成功就重新进行一次受控重启，不在 Linux 登录提示符下发送 bootloader 命令。原 Android 启动场景同样必须先取得 fastboot#。')
+para('已经在 fastboot# 时不要使用 saveenv、erase 或刷写 RAMONLY 镜像。关闭 SuperCom 的串口连接，释放 COM4，然后执行下一步。')
+
+head(3,'启动内存维护系统')
+para('电脑窗口 A 启动 TFTP 服务，保持窗口运行。Windows 如需允许网络访问，仅允许此工具在当前可信局域网通信，不关闭整个防火墙。服务有效期为 10 分钟；超时后可在明确没有传输时重新启动。')
+code(r'node .\maintenance\scripts\tftp-server.cjs 192.168.5.253 .\maintenance 192.168.5.240','电脑窗口 A')
+para('电脑窗口 B 加载九片镜像并核验 CRC。日志文件名每次使用新的名字。只有出现 <code>FULL_RAMONLY_IMAGE_LOADED_ALL_CRCS_MATCHED_NOT_BOOTED</code> 才可继续。')
+code(r'''pwsh -File .\maintenance\scripts\load-full-ramonly.ps1 -Manifest .\maintenance\RAMONLY-manifest.json -LogFile .\logs\ram-load-1.txt
+pwsh -File .\maintenance\scripts\boot-pure-maintenance.ps1 -LogFile .\logs\ram-boot-1.txt''','电脑窗口 B　两条依次执行')
+para('<strong>RAMONLY 九片只加载到内存，绝不能写到 eMMC。</strong>它们组合后约 143 MB，远大于持久 kernel 的读取窗口；包根目录约 9.86 MB 的 boot.img 才是本次持久启动镜像。')
+para('RAM 系统串口出现自动登录的 root shell 后再继续。启动脚本结束并释放 COM4 后，才可用 SuperCom 查看；不要向正在传输或启动中的盒子盲发 Ctrl+C。串口输入须使用约 15 ms 或更慢的逐字符发送，避免长命令丢字符。后续长脚本通过 SSH 文件传输，不直接快速粘贴到串口。')
+
+head(4,'连接维护系统')
+para('RAM 系统地址为 192.168.5.240。它使用临时 SSH 主机密钥，只信任本次电脑已有的 SSH 公钥；<strong>最终系统的登录密码不能用于 RAM 维护系统</strong>。同一电脑保留原有 id_rsa 即可，不要复制、上传或公开 SSH 私钥。每次重新进入 RAM 系统都要重新核对其主机公钥。')
+code('ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub','盒子 TTL root shell　仅显示公钥指纹')
+code(r'''ssh-keyscan -t ed25519 192.168.5.240 2>$null | Set-Content -Encoding ascii .\logs\ram-known_hosts
+ssh-keygen -lf .\logs\ram-known_hosts
+# 只有与 TTL 显示的指纹一致才继续
+$sshArgs = @('-i', "$env:USERPROFILE/.ssh/id_rsa", '-o', 'HostKeyAlgorithms=ssh-ed25519', '-o', 'StrictHostKeyChecking=yes', '-o', 'UserKnownHostsFile=./logs/ram-known_hosts')
+ssh @sshArgs root@192.168.5.240 'uname -r; findmnt -rn -o SOURCE,TARGET,MAJ:MIN; lsblk -b; cat /proc/swaps' ''','电脑 PowerShell')
+para('必须确认根为 RAM 的 rootfs、所有挂载的设备号为 0:*、没有任何 MMC 分区被挂载、没有 swap；eMMC 总大小为 7818182656 字节，新 p8 起始扇区为 86016、长度为 15183872 扇区。若不是此状态，停止，不执行写盘命令。')
+code(r'''ssh @sshArgs root@192.168.5.240 'test ! -L /run/tr100; mkdir -p /run/tr100/pure-flash'
+scp @sshArgs .\boot.img .\bootargs.bin .\installation\probe-bootargs-NOT-FINAL.bin root@192.168.5.240:/run/tr100/pure-flash/
+scp @sshArgs .\rootfs.ext4.gz root@192.168.5.240:/run/tr100/pure-flash/system.ext4.gz
+scp @sshArgs .\scripts\flash-pure-from-ram.sh .\scripts\check-environment-from-ram.sh root@192.168.5.240:/run/tr100/pure-flash/''','电脑 PowerShell　上传结束后冻结输入')
+para('如果更换电脑而没有本次公钥登录权限，可使用 TTL 自动登录的 RAM root shell 与包内 <code>tools/tcp-file.cjs</code> 传输文件。该方式仍须核对接收文件长度及 SHA，不能把“传输完成”当作可刷入结论。具体 fixed-file 用法见包内 MAINTENANCE-RESOURCES.md。')
+
+head(5,'切换临时引导环境')
+para('将附录的 probe-stage.sh 代码保存为 UTF-8 无 BOM、LF 换行的文件，放在电脑解压目录，然后上传运行。此脚本仅把 p2 改成“新分区图、bootcmd=printenv、bootdelay=3”，不写根和内核。必须得到 PROBE_ENV_FULL_READBACK_OK。它验证原引导和硬件参数摘要，拒绝其他设备；原厂环境、最终 Linux 环境或相同 probe 环境之外的 p2 都会被拒绝。')
+code(r'''scp @sshArgs .\probe-stage.sh root@192.168.5.240:/run/tr100/pure-flash/probe-stage.sh
+ssh @sshArgs root@192.168.5.240 'bash /run/tr100/pure-flash/probe-stage.sh' ''','电脑 PowerShell　此步会写 p2')
+para('第一次迁移需验证保存后的新图可经过完整 bootloader 启动：关闭 SuperCom，窗口 A 使用下面的被动捕获脚本；看到 READY 后，窗口 B 通过维护 SSH 重启。此时系统只自动 printenv 并停在 fastboot#，5.240 的 SSH 暂时断开是正常现象。')
+code(r'''pwsh -File .\maintenance\scripts\capture-pure-map-probe.ps1 -LogFile .\logs\map-probe-boot.txt''','电脑窗口 A　被动监听')
+code(r'''ssh @sshArgs root@192.168.5.240 'sync; /usr/lib/tr100/busybox reboot -f' ''','电脑窗口 B')
+para('必须在新启动日志中看到 Bootrom、bootcmd=printenv、新八分区图、bootdelay=3 和 fastboot#。随后重复第 3、4 节，第二次加载 RAM 系统并重新核对 SSH 主机公钥、重新上传文件。<strong>重启会丢失 RAM 中所有文件；不能省略重新上传。</strong>数据写入期间一直保留 probe p2，不恢复原厂 bootcmd。')
+
+head(6,'正式写入 Linux')
+para('在第二次 RAM 会话重新上传后，核对输入摘要。不要改动脚本内固定目标、摘要或容量限制。把附录两个环境脚本也重新上传，供后续使用。')
+code(r'''ssh @sshArgs root@192.168.5.240 'openssl dgst -sha256 /run/tr100/pure-flash/boot.img /run/tr100/pure-flash/system.ext4.gz /dev/mmcblk0p2' ''','电脑 PowerShell　只读检查')
+para('boot.img 应为 c4e63e9a…22de7c9；system.ext4.gz 应为 d0dbbf2f…16baf942；p2 应为 216e4422…6b2db13f。完整值见第 10 节。可先以 --check 做只读预检；下面的 --write 自身也会重新执行全部预检，通过前不写块设备。')
+flash = f'''/usr/lib/tr100/busybox sh /run/tr100/pure-flash/flash-pure-from-ram.sh --write --boot-sha256 {K} --root-gzip-sha256 {G} --root-raw-sha256 {R}'''
+code("# 以下在盒子 RAM 的 bash shell 中执行\nset -o pipefail\n" + flash + " 2>&1 | tee /run/tr100/pure-flash/data-write.log", '盒子 RAM bash shell　破坏性数据写入')
+para('长命令可通过维护 SSH 发送，或将上述三行保存为 data-stage.sh 上传后执行 <code>bash /run/tr100/pure-flash/data-stage.sh</code>。在 PowerShell 中运行 scp 上传，不把 PowerShell 语法输入盒子 Linux。')
+para('脚本将从 42 MiB 到 eMMC 用户区末尾完整写入 Linux，完整读回根 SHA 后才清零整个 12 MiB 内核槽并写新 boot.img；随后核验内核、零尾和保护区。只认可 <code>DATA_WRITE_COMPLETE</code> 与相符的完整摘要，<code>CHECK_PASSED</code> 不是写入完成。操作期间保持电源、网线和 RAM 会话稳定，不重启。')
+para('任何 REFUSED、解压错误、摘要不一致、写盘或读回失败，都停留 RAM。不要继续提交最终环境，也不要恢复指向旧内核的原厂 bootcmd。probe 环境应保留。')
+
+head(7,'提交最终引导环境')
+para('只有第 6 节完整写入及读回成功后，才把附录 final-stage.sh 保存并上传，运行 <code>bash /run/tr100/pure-flash/final-stage.sh</code>。它先检查本次 RAM 数据日志、p8 UUID、p3 内核摘要和当前 probe p2，再写最终 4 MiB 环境并完整读回。')
+code(r'''scp @sshArgs .\final-stage.sh root@192.168.5.240:/run/tr100/pure-flash/final-stage.sh
+ssh @sshArgs root@192.168.5.240 'bash /run/tr100/pure-flash/final-stage.sh' ''','电脑 PowerShell　此步会写最终 p2')
+para('成功必须包含 <code>FINAL_ENV_COMMIT_AND_READBACK_COMPLETE</code>；最终 p2 摘要为 06ea9291…f498885。之后不能再次把已经切为最终 p2 的系统当作 probe 状态运行数据脚本。')
+
+head(8,'重启与验收')
+para('关闭其他串口占用者，先开启默认启动被动捕获，再从维护 SSH 重启。')
+code(r'''pwsh -File .\maintenance\scripts\capture-pure-emmc-boot.ps1 -LogFile .\logs\default-emmc-boot.txt''','电脑窗口 A')
+code(r'''ssh @sshArgs root@192.168.5.240 'sync; /usr/lib/tr100/busybox reboot -f' ''','电脑窗口 B')
+para('应看到 eMMC 从扇区 16384 读取新内核、Validated persistent root /dev/mmcblk0p8、DHCP 租约与 tr100 login。以路由器分配或串口日志显示的地址为准，本次为 192.168.5.20；正常系统不再使用维护地址 5.240。第一次生成 SSH 主机密钥可能需要等待。')
+code('ssh root@192.168.5.20\n# 密码使用你单独设置并保存的值，本文与仓库不记录密码。', '电脑终端　最终系统登录')
+code('findmnt /\nlsblk\ndf -h /\nsystemctl is-system-running\nsystemctl --failed\ntimedatectl\napt-get update', '最终 Linux　验收')
+para('验收目标：/ 为 mmcblk0p8 的 ext4，根分区约 7.2G；保留必要的七个小引导/硬件分区，旧 Android system/cache/userdata 等分区名不再存在。systemd 为 running、失败服务为 0；时区为 Asia/Shanghai，NTP 同步；APT Debian 源指向腾讯。首次空镜像约可用 6.8G，索引更新后本机约可用 6.7G，具体随安装软件和数据变化。')
+para('本次实际完成了两次默认 eMMC 软件重启、密码及公钥 SSH、腾讯 APT 更新和新建普通用户 HTTPS 联网测试。没有进行物理断电启动测试。HDMI 控制台和桌面未配置，当前控制台为 ttyAMA0；fb0/fb1 节点存在不等于 HDMI 已有画面。Wi-Fi 未验证，网口实测 100 Mbps 全双工。')
+
+head(9,'故障处理')
+table([['现象','处理'],['5.20 登录不上','刷写时处于 RAM 维护系统，使用 5.240 和维护公钥；最终启动后查 DHCP 租约。'],['SSH 提示主机密钥变化','重装与 RAM 重启会生成新密钥。先通过 TTL 核对指纹，仅更新对应 IP 的旧记录；不要关闭全部主机密钥检查。'],['TFTP 超时或 CRC 不符','保持 fastboot，检查 PC 地址、UDP69、允许的 peer 和文件；重新加载成功前不 bootm，不写盘。'],['COM4 被占用','释放 SuperCom 或其他脚本的串口连接，一次仅一个占用者。'],['REFUSED 或任何摘要/读回失败','停止并保留 RAM 和日志，不能删校验条件绕过，也不能提交最终环境。'],['开机卡在 initrd 或 bootstrap','通过 TTL 查看 STOPPED/FAILED 原因。保留实际状态，不自动格式化、猜分区或盲目重刷 bootloader。'],['HDMI 黑屏','本版尚未适配 HDMI 输出，以 SSH/TTL 判断运行状态。'],['大文件 wc 数值异常','维护中仅用 /usr/bin/cat file | /usr/bin/wc -c 的真实管道计数；GNU9.1普通文件快捷路径和 BusyBox大计数均有本次发现的32位问题。']])
+para('本包未实测独立 BootROM 救砖。原厂环境文件是受控恢复材料，不是数据写入期间的默认环境；用户数据、旧 Android private/securestore/userdata 不具备完整恢复备份。不要根据旧研究记录中被替代的“restore original p2”注释执行回退。')
+
+head(10,'分区与校验值')
+table([['分区','范围 MiB','用途'],['p1 fastboot','0 至 4','原启动固件保持'],['p2 bootargs','4 至 8','临时 probe 后切最终环境'],['p3 kernel','8 至 20','Linux 内核和小 initrd，槽尾清零'],['p4 deviceinfo','20 至 24','本机身份保持'],['p5 atf','24 至 26','原 ATF 保持'],['p6 baseparam','26 至 34','硬件参数保持'],['p7 pqparam','34 至 42','硬件参数保持'],['p8 rootfs','42 至 7456','其余全部用户区交给 Linux']])
+para('boot0、boot1、RPMB 是独立的 eMMC 硬件区域，不属于 Android 数据分区，本镜像不覆盖它们。完整 .img.gz 解压后是 7818182656 字节用户区；不建议在运行中的根盘直接整盘 dd，应使用本文 RAM 分阶段流程保护引导固件和硬件身份。')
+for name,value in [('完整刷机 ZIP','27842cc0ef16d98b034797b3fd9d365aa4a99ee05e565a88e55c44162ff4df11'),('完整镜像 gzip','bfc3145e62ae7669fb03235d770242be063367e5ebf2e033a36d39abb258e758'),('完整镜像 raw','446cf6fe0b4c5b80465dc9b88bad0afa7c387a9fb47268d72584b516fb996d7b'),('boot.img',K),('rootfs.ext4.gz',G),('根 raw',R),('probe 环境',P),('最终环境',E),('原始环境',OLD),('数据脚本','2e3b4f99b2f3ac5c99bd627be5c171dfb55e90f0766aa39bac6e357189c9ee82')]: code(value,name+'　SHA256')
+
+head(11,'环境写入命令附录')
+para('下列代码是操作命令文本，打开文档不会执行。分别保存为 probe-stage.sh 和 final-stage.sh，使用 UTF-8 无 BOM、LF 换行，通过 SCP 上传后仅在已验证的 RAM 维护系统运行。初次原厂到 probe 的操作已实测；兼容最终 p2 再切 probe 的白名单用于本机重装，本文没有再进行第三次整机重刷。最终脚本沿用本次实际提交命令，并额外要求保存的数据完成日志。')
+code(probe,'probe-stage.sh　仅切换到安全 printenv 环境')
+code(final,'final-stage.sh　仅在 DATA_WRITE_COMPLETE 后提交最终环境')
+pieces.append('<footer>本机专用实验性适配文档。源码仓库 github.com/gmingtian/tr100-gk6323-linux；镜像、原机备份与登录凭据不随源码提交。文档仅记录和说明操作，不触发任何设备动作。</footer>')
+
+style='''body{font-family:"Microsoft YaHei","Segoe UI",sans-serif;color:#17202a;line-height:1.75;margin:0;background:#f3f5f7}main{max-width:1000px;margin:28px auto;background:white;padding:42px 56px}h1,h2{color:#000;line-height:1.35}h1{font-size:28px;margin:0 0 12px}h2{font-size:22px;margin-top:42px}header p,footer,.label{color:#4b5563}p{margin:13px 0}nav{display:flex;flex-wrap:wrap;gap:8px 20px;margin:26px 0}a{color:#075b96}code{font-family:Consolas,"Microsoft YaHei",monospace}p code,td code{background:#f0f3f5;padding:1px 4px}pre{background:#f5f6f8;border:1px solid #d9d9d9;padding:16px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-all;font-size:13px;line-height:1.65}.label{font-size:13px;margin-top:20px}table{border-collapse:collapse;width:100%;margin:20px 0;font-size:14px}td,th{border:1px solid #d9d9d9;padding:11px 13px;text-align:left;vertical-align:middle}th{background:#e6edf4;color:#000}tr:nth-child(2n+3){background:#f8fafc}footer{margin-top:44px;border-top:1px solid #d9d9d9;padding-top:18px;font-size:13px}@media(max-width:700px){main{padding:24px 20px;margin:0}h1{font-size:24px}}@media print{body{background:white}main{margin:0;padding:0;max-width:none}nav{display:none}pre{font-size:9pt}h2{break-after:avoid}tr{break-inside:avoid}}'''
+OUT.write_bytes(('<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TR100 纯 Linux 刷入指南</title><style>'+style+'</style><main>'+''.join(pieces)+'</main></html>\n').encode('utf-8'))
+print(OUT)

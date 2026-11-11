@@ -1,0 +1,2 @@
+# TR100 root is mounted by the small initrd using an exact device and UUID.
+# API filesystems are prepared before systemd. No additional block mounts or swap.

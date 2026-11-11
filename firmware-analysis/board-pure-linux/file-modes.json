@@ -1,0 +1,17 @@
+{
+  "uid": 0,
+  "gid": 0,
+  "defaultRegularMode": "0644",
+  "defaultDirectoryMode": "0755",
+  "executableMode": "0755",
+  "executables": [
+    "usr/local/sbin/tr100-rom-bootstrap",
+    "usr/local/sbin/tr100-network",
+    "usr/local/sbin/tr100-enable-network",
+    "usr/local/libexec/tr100-udhcpc-hook",
+    "usr/local/sbin/tr100-ssh-hostkeys",
+    "usr/sbin/mdev",
+    "usr/lib/tr100/busybox"
+  ],
+  "note": "Copy the verified static BusyBox to its exact real-file path. Preserve all original rootfs owner, mode, hardlinks and symlinks; this is an ext4-root overlay, not a standalone initrd."
+}

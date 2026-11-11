@@ -1,0 +1,9 @@
+{
+  "assemblyDirectory": "REPLACE_WITH_ACTUAL_ASSEMBLY_DIRECTORY",
+  "originalPrefix": {"file": "REPLACE_WITH_ORIGINAL_262M_FILE", "sha256": "a8330d0eed9736e91029bf64abc797082b3b8614a1c20f5ea1683838b1ae98c2"},
+  "boot": {"file": "REPLACE_WITH_PURE_V2_BOOT_FILE"},
+  "rootGzip": {"file": "REPLACE_WITH_FINAL_ROOT_GZIP", "sha256": "REPLACE_WITH_FINAL_GZIP_SHA256", "rawSHA256": "REPLACE_WITH_FINAL_ROOT_RAW_SHA256"},
+  "environment": {"file": "REPLACE_WITH_FINAL_TWO_KEY_ENV_FILE"},
+  "evidence": [],
+  "runtimeEvidence": null
+}

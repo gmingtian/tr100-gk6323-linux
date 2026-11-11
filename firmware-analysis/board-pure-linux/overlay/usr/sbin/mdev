@@ -1,0 +1,12 @@
+#!/usr/lib/tr100/busybox sh
+/usr/lib/tr100/busybox mdev "$@"
+status=$?
+if [ "$status" -eq 0 ] && [ "${ACTION:-}" = add ] && [ -S /run/udev/control ]; then
+    case "${DEVPATH:-}" in
+        /devices/*|/class/*)
+            if [ -w "/sys$DEVPATH/uevent" ]; then
+                printf '%s\n' change >"/sys$DEVPATH/uevent" 2>/dev/null || :
+            fi ;;
+    esac
+fi
+exit "$status"

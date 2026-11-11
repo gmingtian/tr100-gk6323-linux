@@ -1,0 +1,81 @@
+#!/usr/lib/tr100/busybox sh
+# DHCP values are data. Validate the entire lease before changing any state.
+set -efu
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+dry_run=0
+if [ "${1:-}" = --dry-run ]; then dry_run=1; shift; fi
+event=${1:-}
+fail() { echo "TR100 DHCP: $*" >&2; exit 1; }
+[ "${interface:-}" = eth0 ] || fail 'unexpected interface'
+valid_ipv4() {
+    case "$1" in ''|*[!0-9.]*|.*|*.|*..*) return 1;; esac
+    save_ifs=$IFS; IFS=.; set -- $1; IFS=$save_ifs
+    [ "$#" -eq 4 ] || return 1
+    for octet in "$@"; do
+        case "$octet" in 0|[1-9]|[1-9][0-9]|[1-9][0-9][0-9]) ;; *) return 1;; esac
+        [ "$octet" -le 255 ] || return 1
+    done
+}
+netmask_prefix() {
+    # Count only contiguous mask bits; reject malformed dotted masks.
+    valid_ipv4 "$1" || return 1
+    save_ifs=$IFS; IFS=.; set -- $1; IFS=$save_ifs
+    bits=0; ended=0
+    for octet in "$@"; do
+        [ "$ended" -eq 0 ] || { [ "$octet" -eq 0 ] || return 1; }
+        case "$octet" in
+            255) bits=$((bits+8));; 254) bits=$((bits+7)); ended=1;;
+            252) bits=$((bits+6)); ended=1;; 248) bits=$((bits+5)); ended=1;;
+            240) bits=$((bits+4)); ended=1;; 224) bits=$((bits+3)); ended=1;;
+            192) bits=$((bits+2)); ended=1;; 128) bits=$((bits+1)); ended=1;;
+            0) ended=1;; *) return 1;;
+        esac
+    done
+    printf '%s\n' "$bits"
+}
+ip_command() {
+    if [ "$dry_run" -eq 1 ]; then printf 'ip'; printf ' %s' "$@"; printf '\n';
+    else /usr/bin/ip -4 "$@"; fi
+}
+case "$event" in
+    deconfig)
+        ip_command route del default dev eth0 2>/dev/null || :
+        ip_command address flush dev eth0 scope global
+        if [ "$dry_run" -eq 0 ]; then /usr/lib/tr100/busybox rm -f /run/tr100/dhcp-lease; fi
+        exit 0 ;;
+    bound|renew) ;;
+    nak|leasefail) echo "TR100 DHCP: $event; waiting for another lease" >&2; exit 0 ;;
+    *) fail 'unsupported event' ;;
+esac
+valid_ipv4 "${ip:-}" || fail 'invalid leased IPv4 address'
+prefix=$(netmask_prefix "${subnet:-}") || fail 'invalid or noncontiguous subnet mask'
+gateway=
+for value in ${router:-}; do
+    valid_ipv4 "$value" || fail 'invalid router option'
+    [ -n "$gateway" ] || gateway=$value
+done
+for value in ${dns:-}; do valid_ipv4 "$value" || fail 'invalid DNS option'; done
+# Validation above is deliberately complete before the first mutating command.
+ip_command address flush dev eth0 scope global
+ip_command address replace "$ip/$prefix" dev eth0
+if [ -n "$gateway" ]; then ip_command route replace default via "$gateway" dev eth0;
+else ip_command route del default dev eth0 2>/dev/null || :; fi
+if [ "$dry_run" -eq 1 ]; then
+    printf '# DHCP resolv.conf\n'
+    for value in ${dns:-}; do printf 'nameserver %s\n' "$value"; done
+else
+    BB=/usr/lib/tr100/busybox
+    [ ! -L /etc/resolv.conf ] || fail '/etc/resolv.conf must be a regular file'
+    tmp=$("$BB" mktemp /etc/resolv.conf.tr100.XXXXXX) || fail 'cannot create DNS temporary file'
+    trap '"$BB" rm -f "$tmp"' EXIT HUP INT TERM
+    {
+        printf '# Managed by TR100 DHCP\n'
+        for value in ${dns:-}; do printf 'nameserver %s\n' "$value"; done
+    } >"$tmp"
+    "$BB" chmod 0644 "$tmp"
+    "$BB" mv -f "$tmp" /etc/resolv.conf
+    trap - EXIT HUP INT TERM
+    "$BB" mkdir -p /run/tr100
+    printf '%s/%s\n' "$ip" "$prefix" >/run/tr100/dhcp-lease
+fi

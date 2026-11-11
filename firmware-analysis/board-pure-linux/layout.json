@@ -1,0 +1,34 @@
+{
+  "status": "offline-candidate-not-device-validated",
+  "sectorBytes": 512,
+  "diskBytes": 7818182656,
+  "diskSectors": 15269888,
+  "hardwarePrefixEndExclusive": 44040192,
+  "kernel": {
+    "device": "/dev/mmcblk0p3",
+    "startSector": 16384,
+    "sectors": 24576,
+    "bytes": 12582912,
+    "bootloaderReadSectors": 20480,
+    "bootloaderReadBytes": 10485760,
+    "loadAddressHex": "0x01ffbfc0"
+  },
+  "root": {
+    "device": "/dev/mmcblk0p8",
+    "sysfsDevnum": "259:0",
+    "nodeDevnumHex": "103:0",
+    "startSector": 86016,
+    "sectors": 15183872,
+    "bytes": 7774142464,
+    "MiB": 7414,
+    "blockSize": 4096,
+    "blocks": 1897984,
+    "uuid": "a8d4abf7-6ae4-4f9b-a39a-ef1b79c63230",
+    "tag": "tr100-pure-linux-20261111"
+  },
+  "blkdevparts": "blkdevparts=mmcblk0:4M(fastboot),4M(bootargs),12M(kernel),4M(deviceinfo),2M(atf),8M(baseparam),8M(pqparam),-(rootfs)",
+  "proposedBootcmdForReviewOnly": "mmc read 0 0x8020000 0xC000 0x1000;mmc read 0 0x1FFBFC0 0x4000 0x5000; bootm 0x1FFBFC0",
+  "neverExecutedByThisDirectory": true,
+  "persistentEnvironmentRequiresSeparateGates": true,
+  "androidUserspaceOrRecoveryRetained": false
+}

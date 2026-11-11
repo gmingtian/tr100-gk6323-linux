@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "profile": "TR100-GK6323V100C-pure-linux-20261111",
+  "diskBytes": 7818182656,
+  "diskSectors": 15269888,
+  "sectorBytes": 512,
+  "prefixBytes": 44040192,
+  "kernelSlotBytes": 12582912,
+  "bootReadBytes": 10485760,
+  "partitionSource": "fixed kernel blkdevparts bootarg; no GPT/MBR rewrite",
+  "blkdevparts": "blkdevparts=mmcblk0:4M(fastboot),4M(bootargs),12M(kernel),4M(deviceinfo),2M(atf),8M(baseparam),8M(pqparam),-(rootfs)",
+  "partitions": [
+    {
+      "index": 1,
+      "name": "fastboot",
+      "device": "/dev/mmcblk0p1",
+      "startBytes": 0,
+      "lengthBytes": 4194304,
+      "startSector": 0,
+      "sizeSectors": 8192,
+      "preserved": true
+    },
+    {
+      "index": 2,
+      "name": "bootargs",
+      "device": "/dev/mmcblk0p2",
+      "startBytes": 4194304,
+      "lengthBytes": 4194304,
+      "startSector": 8192,
+      "sizeSectors": 8192,
+      "preserved": false
+    },
+    {
+      "index": 3,
+      "name": "kernel",
+      "device": "/dev/mmcblk0p3",
+      "startBytes": 8388608,
+      "lengthBytes": 12582912,
+      "startSector": 16384,
+      "sizeSectors": 24576,
+      "preserved": false
+    },
+    {
+      "index": 4,
+      "name": "deviceinfo",
+      "device": "/dev/mmcblk0p4",
+      "startBytes": 20971520,
+      "lengthBytes": 4194304,
+      "startSector": 40960,
+      "sizeSectors": 8192,
+      "preserved": true
+    },
+    {
+      "index": 5,
+      "name": "atf",
+      "device": "/dev/mmcblk0p5",
+      "startBytes": 25165824,
+      "lengthBytes": 2097152,
+      "startSector": 49152,
+      "sizeSectors": 4096,
+      "preserved": true
+    },
+    {
+      "index": 6,
+      "name": "baseparam",
+      "device": "/dev/mmcblk0p6",
+      "startBytes": 27262976,
+      "lengthBytes": 8388608,
+      "startSector": 53248,
+      "sizeSectors": 16384,
+      "preserved": true
+    },
+    {
+      "index": 7,
+      "name": "pqparam",
+      "device": "/dev/mmcblk0p7",
+      "startBytes": 35651584,
+      "lengthBytes": 8388608,
+      "startSector": 69632,
+      "sizeSectors": 16384,
+      "preserved": true
+    },
+    {
+      "index": 8,
+      "name": "rootfs",
+      "device": "/dev/mmcblk0p8",
+      "startBytes": 44040192,
+      "lengthBytes": 7774142464,
+      "startSector": 86016,
+      "sizeSectors": 15183872,
+      "preserved": false
+    }
+  ],
+  "root": {
+    "device": "/dev/mmcblk0p8",
+    "devnum": "259:0",
+    "uuid": "a8d4abf7-6ae4-4f9b-a39a-ef1b79c63230",
+    "expectedFileTag": "tr100-pure-linux-20261111",
+    "bytes": 7774142464,
+    "blockSize": 4096,
+    "blocks": 1897984
+  },
+  "bootcmd": "mmc read 0 0x8020000 0xC000 0x1000;mmc read 0 0x1FFBFC0 0x4000 0x5000; bootm 0x1FFBFC0"
+}

@@ -1,0 +1,7 @@
+[Match]
+OriginalName=eth0
+
+[Link]
+NamePolicy=
+Name=eth0
+MACAddressPolicy=none

@@ -1,0 +1,20 @@
+[
+  "usr/sbin/policy-rc.d",
+  "init",
+  "etc/tr100-ram-validation",
+  "usr/local/sbin/tr100-ram-network",
+  "usr/local/sbin/tr100-ram-ssh-hostkeys",
+  "etc/systemd/system/tr100-ram-network.service",
+  "etc/systemd/system/multi-user.target.wants/tr100-ram-network.service",
+  "etc/systemd/system/serial-getty@ttyAMA0.service.d/tr100-ram-autologin.conf",
+  "etc/systemd/system/ssh.service.d/tr100-ram.conf",
+  "etc/ssh/sshd_config.d/00-tr100-ram.conf",
+  "etc/systemd/network/10-tr100-ram-eth0.link",
+  "usr/bin/tr100-busybox",
+  "etc/ssh/ssh_host_rsa_key",
+  "etc/ssh/ssh_host_rsa_key.pub",
+  "etc/ssh/ssh_host_ecdsa_key",
+  "etc/ssh/ssh_host_ecdsa_key.pub",
+  "etc/ssh/ssh_host_ed25519_key",
+  "etc/ssh/ssh_host_ed25519_key.pub"
+]

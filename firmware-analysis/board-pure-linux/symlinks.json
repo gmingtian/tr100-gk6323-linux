@@ -1,0 +1,19 @@
+[
+  {"path":"etc/localtime","target":"/usr/share/zoneinfo/Asia/Shanghai"},
+  {"path":"etc/systemd/system-generators/systemd-gpt-auto-generator","target":"/dev/null"},
+  {"path":"etc/systemd/system/default.target","target":"/usr/lib/systemd/system/multi-user.target"},
+  {"path":"etc/systemd/system/multi-user.target.wants/tr100-network.service","target":"../tr100-network.service"},
+  {"path":"etc/systemd/system/getty.target.wants/serial-getty@ttyAMA0.service","target":"/usr/lib/systemd/system/serial-getty@.service"},
+  {"path":"etc/systemd/system/getty@tty1.service","target":"/dev/null"},
+  {"path":"etc/systemd/system/systemd-resolved.service","target":"/dev/null"},
+  {"path":"etc/systemd/system/dbus-org.freedesktop.resolve1.service","target":"/dev/null"},
+  {"path":"etc/systemd/system/systemd-networkd.service","target":"/dev/null"},
+  {"path":"etc/systemd/system/dbus-org.freedesktop.network1.service","target":"/dev/null"},
+  {"path":"etc/systemd/system/systemd-networkd-wait-online.service","target":"/dev/null"},
+  {"path":"etc/systemd/system/systemd-repart.service","target":"/dev/null"},
+  {"path":"etc/systemd/system/fstrim.timer","target":"/dev/null"},
+  {"path":"etc/systemd/system/fstrim.service","target":"/dev/null"},
+  {"path":"etc/systemd/system/e2scrub_all.timer","target":"/dev/null"},
+  {"path":"etc/systemd/system/e2scrub_all.service","target":"/dev/null"},
+  {"path":"etc/systemd/system/e2scrub_reap.service","target":"/dev/null"}
+]

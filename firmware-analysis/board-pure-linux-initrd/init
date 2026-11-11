@@ -1,0 +1,82 @@
+#!/bin/busybox sh
+# Pure-Linux candidate initrd: fixed p8 root only; no formatting or boot-environment writes.
+if [ "$$" -ne 1 ]; then
+    echo 'TR100 pure-Linux initrd requires PID 1; refusing hardware commands.' >&2
+    exit 2
+fi
+BB=/bin/busybox
+PATH=/bin:/sbin
+export PATH BB
+umask 077
+
+log() { echo "[tr100-initrd] $*"; }
+rescue() {
+    trap - EXIT HUP INT TERM
+    echo "[tr100-initrd] STOPPED: $*" >&2
+    if [ -c /dev/ttyAMA0 ]; then exec </dev/ttyAMA0 >/dev/ttyAMA0 2>&1; fi
+    while :; do
+        "$BB" setsid "$BB" cttyhack "$BB" sh -i
+        "$BB" sleep 1
+    done
+}
+must() { "$@" || rescue "command failed: $*"; }
+trap 'status=$?; rescue "unexpected exit $status"' EXIT
+trap 'rescue interrupted' HUP INT TERM
+. /lib/tr100-pure-initrd-policy.sh || rescue 'missing trusted initrd policy'
+
+must "$BB" mkdir -p /proc /sys /dev /run /newroot
+must "$BB" mount -t proc -o nosuid,nodev,noexec proc /proc
+must "$BB" mount -t sysfs -o nosuid,nodev,noexec sysfs /sys
+must "$BB" mount -t tmpfs -o mode=0755,nosuid tmpfs /dev
+for spec in 'console 5 1 600' 'ttyAMA0 204 64 600' 'null 1 3 666' 'zero 1 5 666' \
+            'random 1 8 666' 'urandom 1 9 666' 'tty 5 0 666' 'ptmx 5 2 666'; do
+    set -- $spec
+    must "$BB" mknod -m "$4" "/dev/$1" c "$2" "$3"
+done
+exec </dev/ttyAMA0 >/dev/ttyAMA0 2>&1
+must "$BB" mkdir -p /dev/pts /dev/shm
+must "$BB" mount -t devpts -o mode=620,gid=5 devpts /dev/pts
+must "$BB" mount -t tmpfs -o mode=1777,nosuid,nodev tmpfs /dev/shm
+must "$BB" mount -t tmpfs -o size=128m,mode=0755,nosuid,nodev tmpfs /run
+must "$BB" mkdir -p /run/tr100
+must "$BB" chmod 0700 /run/tr100
+printf '%s\n' /sbin/mdev >/proc/sys/kernel/hotplug || rescue 'cannot set early mdev helper'
+must "$BB" mdev -s
+must "$BB" ln -s /proc/self/fd /dev/fd
+must "$BB" ln -s /proc/self/fd/0 /dev/stdin
+must "$BB" ln -s /proc/self/fd/1 /dev/stdout
+must "$BB" ln -s /proc/self/fd/2 /dev/stderr
+cmdline=$("$BB" cat /proc/cmdline) || rescue 'cannot read cmdline'
+tr100_validate_cmdline "$cmdline" || rescue 'exact pure eight-part map required; legacy image-download modes are refused'
+log 'Pure-Linux candidate: validating fixed p8 geometry, whole disk and root identity.'
+[ -b /dev/mmcblk0p8 ] || rescue 'fixed p8 block node is absent'
+start=$("$BB" cat /sys/class/block/mmcblk0p8/start) || rescue 'cannot read p8 start'
+sectors=$("$BB" cat /sys/class/block/mmcblk0p8/size) || rescue 'cannot read p8 size'
+sysdev=$("$BB" cat /sys/class/block/mmcblk0p8/dev) || rescue 'cannot read p8 device'
+nodedev=$("$BB" stat -c '%t:%T' /dev/mmcblk0p8) || rescue 'cannot stat p8 block node'
+disksectors=$("$BB" cat /sys/class/block/mmcblk0/size) || rescue 'cannot read fixed whole-disk size'
+tr100_check_p8 "$start" "$sectors" "$sysdev" "$nodedev" "$disksectors" || rescue 'p8 geometry/device/disk mismatch'
+ROOT_DEVICE=/dev/mmcblk0p8
+ROOT_DEVNUM=259:0
+
+# This static BusyBox has no blkid applet. Read only the fixed ext superblock fields.
+magic=$("$BB" dd if="$ROOT_DEVICE" bs=1 skip=1080 count=2 2>/dev/null | "$BB" od -An -v -tx1 | "$BB" tr -d ' \n') || rescue 'cannot read root filesystem magic'
+uuidhex=$("$BB" dd if="$ROOT_DEVICE" bs=1 skip=1128 count=16 2>/dev/null | "$BB" od -An -v -tx1 | "$BB" tr -d ' \n') || rescue 'cannot read root filesystem UUID'
+tr100_check_ext_signature "$magic" "$uuidhex" || rescue 'root signature or fixed UUID mismatch; refusing mount'
+must "$BB" mount -t ext4 -o rw "$ROOT_DEVICE" /newroot
+tr100_read_singleline /newroot/etc/tr100/rootfs-uuid || rescue 'missing/invalid root UUID marker'
+root_uuid=$TR100_LINE
+tr100_read_singleline /newroot/etc/tr100/image-tag || rescue 'missing/invalid root image marker'
+tr100_check_markers "$root_uuid" "$TR100_LINE" || rescue 'mounted root markers mismatch'
+tr100_preflight_newroot /newroot || rescue 'new root static interpreter/bootstrap/API preflight failed'
+tr100_write_handoff /run/tr100 "$ROOT_DEVICE" "$ROOT_DEVNUM" || rescue 'cannot write handoff data'
+log "Validated $ROOT_DEVICE ($ROOT_DEVNUM); moving API filesystems and switching PID 1."
+# Disable the old initrd path during the short helper-free move/switch interval.
+printf '%s' '' >/proc/sys/kernel/hotplug || rescue 'cannot suspend early hotplug helper'
+for api in proc sys dev run; do
+    must "$BB" mount --move "/$api" "/newroot/$api"
+done
+# This exec is an irreversible boundary: the old ash traps cannot catch an internal
+# BusyBox switch_root/chroot/exec fatal error. Preflight removes known interpreter,
+# script and mount-target failures; the root bootstrap installs its own PID1 traps.
+exec "$BB" switch_root /newroot /usr/lib/tr100/busybox sh /usr/local/sbin/tr100-rom-bootstrap

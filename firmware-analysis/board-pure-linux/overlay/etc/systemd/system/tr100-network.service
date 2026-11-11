@@ -1,0 +1,19 @@
+[Unit]
+Description=TR100 root DHCP client for eth0
+After=systemd-udev-trigger.service
+Before=network.target ssh.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/sbin/tr100-network
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=10
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target

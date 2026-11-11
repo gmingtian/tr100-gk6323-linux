@@ -1,0 +1,13 @@
+#!/usr/lib/tr100/busybox sh
+set -eu
+BB=/usr/lib/tr100/busybox
+n=0
+while [ ! -d /sys/class/net/eth0 ]; do
+    n=$((n + 1)); [ "$n" -le 20 ] || { echo 'TR100: eth0 did not appear' >&2; exit 1; }
+    "$BB" sleep 1
+done
+"$BB" mkdir -p /run/tr100
+/usr/bin/ip link set dev lo up
+/usr/bin/ip link set dev eth0 up
+# Foreground mode makes systemd own the only persistent DHCP client.
+exec "$BB" udhcpc -f -i eth0 -s /usr/local/libexec/tr100-udhcpc-hook -p /run/tr100/udhcpc.pid

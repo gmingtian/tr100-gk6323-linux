@@ -1,0 +1,156 @@
+#!/usr/lib/tr100/busybox sh
+# Invoked only by the small initrd after switch_root; never selects a root disk.
+if [ "$$" -ne 1 ]; then
+    echo 'TR100 pure Linux bootstrap requires PID 1; refusing to mount or change anything.' >&2
+    exit 2
+fi
+BB=/usr/lib/tr100/busybox
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+umask 022
+log() {
+    echo "[tr100-rom] $*"
+    if [ -d /run/tr100 ]; then echo "[tr100-rom] $*" >>/run/tr100/bootstrap.log; fi
+}
+rescue() {
+    trap - EXIT HUP INT TERM
+    echo "[tr100-rom] BOOTSTRAP FAILED: $*" >&2
+    if [ -c /dev/ttyAMA0 ]; then exec </dev/ttyAMA0 >/dev/ttyAMA0 2>&1; fi
+    log "BOOTSTRAP FAILED: $*"
+    log 'Physical serial recovery shell; no automatic root selection, retry or reboot.'
+    while :; do
+        "$BB" setsid "$BB" cttyhack "$BB" sh -i
+        "$BB" sleep 1
+    done
+}
+must() { "$@" || rescue "command failed: $*"; }
+trap 'status=$?; rescue "unexpected bootstrap exit (status $status)"' EXIT
+trap 'rescue "bootstrap interrupted"' HUP INT TERM
+must "$BB" mkdir -p /proc
+if [ ! -r /proc/self/mountinfo ]; then
+    must "$BB" mount -t proc -o nosuid,nodev,noexec proc /proc
+fi
+fstype_at() {
+    "$BB" awk -v target="$1" '$5==target {for(i=7;i<=NF;i++) if($i=="-") value=$(i+1)} END {print value}' /proc/self/mountinfo
+}
+ensure_fs() {
+    target=$1 expected=$2 options=$3 source=$4
+    must "$BB" mkdir -p "$target"
+    actual=$(fstype_at "$target")
+    if [ -n "$actual" ]; then
+        [ "$actual" = "$expected" ] || rescue "unexpected filesystem at $target: $actual"
+    else
+        must "$BB" mount -t "$expected" -o "$options" "$source" "$target"
+    fi
+}
+[ "$(fstype_at /proc)" = proc ] || rescue '/proc is not procfs'
+# /run is mandatory handoff state. Never cover records or the loop image with a new mount.
+[ "$(fstype_at /run)" = tmpfs ] || rescue '/run was not moved from the small initrd as tmpfs'
+[ -d /run/tr100 ] && [ ! -L /run/tr100 ] || rescue 'invalid handoff directory'
+one_line() {
+    [ -f "$1" ] && [ ! -L "$1" ] || return 1
+    [ "$("$BB" wc -l <"$1")" -eq 1 ] || return 1
+    IFS= read -r value <"$1" || return 1
+    [ -n "$value" ] || return 1
+    printf '%s\n' "$value"
+}
+expected_uuid=a8d4abf7-6ae4-4f9b-a39a-ef1b79c63230
+# BEGIN PURE LAYOUT GUARDS
+tr100_pure_validate_cmdline() {
+    [ "$#" -eq 1 ] || return 1
+    pure_map='blkdevparts=mmcblk0:4M(fastboot),4M(bootargs),12M(kernel),4M(deviceinfo),2M(atf),8M(baseparam),8M(pqparam),-(rootfs)'
+    map_count=0
+    set -f
+    for token in $1; do
+        case "$token" in
+            blkdevparts=*) [ "$token" = "$pure_map" ] || return 1; map_count=$((map_count+1)) ;;
+            tr100.ramtest=*|tr100.root_sha256=*) return 1 ;;
+        esac
+    done
+    [ "$map_count" -eq 1 ]
+}
+tr100_pure_validate_geometry() {
+    [ "$#" -eq 4 ] && [ "$1" = 86016 ] && [ "$2" = 15183872 ] && [ "$3" = 259:0 ] && [ "$4" = 15269888 ]
+}
+# END PURE LAYOUT GUARDS
+mode=persistent
+expected_device=/dev/mmcblk0p8 expected_devnum=259:0
+tr100_pure_validate_cmdline "$("$BB" cat /proc/cmdline)" || rescue 'unexpected pure Linux map or stale RAM-mode argument'
+root_device=$(one_line /run/tr100/root-device) || rescue 'invalid root-device handoff'
+root_devnum=$(one_line /run/tr100/root-devnum) || rescue 'invalid root-devnum handoff'
+root_uuid=$(one_line /run/tr100/root-uuid) || rescue 'invalid root-uuid handoff'
+image_uuid=$(one_line /etc/tr100/rootfs-uuid) || rescue 'missing image UUID'
+image_tag=$(one_line /etc/tr100/image-tag) || rescue 'missing image tag'
+[ "$root_device" = "$expected_device" ] && [ "$root_devnum" = "$expected_devnum" ] || rescue 'root handoff does not match selected mode'
+[ "$root_uuid" = "$expected_uuid" ] && [ "$image_uuid" = "$expected_uuid" ] || rescue 'root UUID handoff mismatch'
+[ "$image_tag" = tr100-pure-linux-20261111 ] || rescue 'unexpected image tag'
+[ "$(fstype_at /)" = ext4 ] || rescue 'current root is not ext4'
+"$BB" awk '$5=="/" {opts=$6} END {exit !(opts ~ /(^|,)rw(,|$)/)}' /proc/self/mountinfo || rescue 'current root is not writable'
+actual_devnum=$("$BB" awk '$5=="/" {value=$3} END {print value}' /proc/self/mountinfo)
+[ "$actual_devnum" = "$expected_devnum" ] || rescue 'current root device number mismatch'
+# All other block-backed mounts are forbidden, including eMMC during RAM validation.
+"$BB" awk -v allowed="$expected_devnum" '$3 !~ /^0:/ && $3!=allowed {bad=1} END {exit bad}' /proc/self/mountinfo || rescue 'unexpected additional block-backed mount'
+ensure_fs /sys sysfs nosuid,nodev,noexec sysfs
+ensure_fs /dev tmpfs mode=0755,nosuid tmpfs
+if [ ! -b "$root_device" ]; then
+    # Rebuild only the already-verified root node if /dev had to be prepared here.
+    must "$BB" mknod -m 600 "$root_device" b "${expected_devnum%:*}" "${expected_devnum#*:}"
+fi
+sys_devnum=$("$BB" cat "/sys/class/block/${root_device##*/}/dev") || rescue 'root sysfs identity missing'
+[ "$sys_devnum" = "$expected_devnum" ] || rescue 'root sysfs identity mismatch'
+tr100_pure_validate_geometry "$("$BB" cat /sys/class/block/mmcblk0p8/start)" "$("$BB" cat /sys/class/block/mmcblk0p8/size)" "$sys_devnum" "$("$BB" cat /sys/class/block/mmcblk0/size)" || rescue 'pure Linux root/disk geometry mismatch'
+actual_uuid=$(/usr/sbin/blkid -s UUID -o value "$root_device") || rescue 'cannot read actual root UUID'
+[ "$actual_uuid" = "$expected_uuid" ] || rescue 'actual root UUID mismatch'
+generator_mask=/etc/systemd/system-generators/systemd-gpt-auto-generator
+[ -L "$generator_mask" ] && [ "$("$BB" readlink "$generator_mask")" = /dev/null ] || rescue 'GPT auto generator mask missing'
+for spec in 'console 5 1 600' 'ttyAMA0 204 64 600' 'null 1 3 666' 'zero 1 5 666' \
+            'full 1 7 666' 'random 1 8 666' 'urandom 1 9 666' 'tty 5 0 666' \
+            'kmsg 1 11 600' 'ptmx 5 2 666'; do
+    set -- $spec
+    if [ ! -c "/dev/$1" ]; then must "$BB" mknod -m "$4" "/dev/$1" c "$2" "$3"; fi
+done
+exec </dev/ttyAMA0 >/dev/ttyAMA0 2>&1
+ensure_fs /dev/pts devpts mode=620,gid=5 devpts
+ensure_fs /dev/shm tmpfs mode=1777,nosuid,nodev tmpfs
+must "$BB" mkdir -p /dev/mqueue /run/udev
+log "Validated $mode root $root_device ($root_devnum), UUID $root_uuid"
+[ -w /proc/sys/kernel/hotplug ] || rescue 'kernel hotplug helper interface unavailable'
+printf '%s\n' /sbin/mdev >/proc/sys/kernel/hotplug || rescue 'cannot install mdev helper'
+must "$BB" mdev -s
+for fd in fd:fd stdin:fd/0 stdout:fd/1 stderr:fd/2; do
+    must "$BB" ln -sfn "/proc/self/${fd#*:}" "/dev/${fd%:*}"
+done
+release=$("$BB" uname -r)
+[ "$release" = 3.18.24_gk6323v100c ] || rescue "unsupported kernel $release"
+for pair in ehci-platform:ehci_platform ohci-platform:ohci_platform; do
+    if [ ! -d "/sys/module/${pair#*:}" ]; then
+        must "$BB" insmod "/lib/modules/$release/${pair%:*}.ko"
+    fi
+done
+must "$BB" mdev -s
+ensure_fs /sys/fs/cgroup tmpfs mode=0755,nosuid,nodev,noexec tmpfs
+ensure_fs /sys/fs/cgroup/systemd cgroup none,name=systemd cgroup
+"$BB" awk '$2=="/sys/fs/cgroup/systemd" && $3=="cgroup" && $4 ~ /(^|,)name=systemd(,|$)/ {ok=1} END {exit !ok}' /proc/mounts || rescue 'legacy named systemd cgroup missing'
+# systemd 252.39 detects this existing layout before inspecting cmdline/defaults.
+# Its optional hybrid probe cannot succeed on this exact vendor kernel.
+if "$BB" grep -qw cgroup2 /proc/filesystems; then rescue 'unexpected cgroup2 support; legacy handoff requires review'; fi
+log 'Legacy cgroup layout verified; no systemd boot flags or environment changes required by bootstrap'
+UDEVD=/usr/lib/systemd/systemd-udevd
+UDEVADM=/usr/bin/udevadm
+[ -x "$UDEVD" ] && [ -x "$UDEVADM" ] || rescue 'real udev tools missing'
+if "$BB" pidof systemd-udevd >/dev/null 2>&1; then rescue 'unexpected existing udevd'; fi
+must "$UDEVD" --daemon
+must "$BB" timeout -k 5 25 "$UDEVADM" control --ping --timeout=20
+must "$BB" timeout -k 5 40 "$UDEVADM" trigger --action=add
+must "$BB" timeout -k 5 40 "$UDEVADM" settle --timeout=30
+must "$BB" timeout -k 5 35 "$UDEVADM" control --exit --timeout=30
+n=0
+while "$BB" pidof systemd-udevd >/dev/null 2>&1; do
+    n=$((n + 1)); [ "$n" -le 30 ] || rescue 'temporary udevd did not exit'
+    "$BB" sleep 1
+done
+[ -S /run/udev/control ] || rescue 'real udev control inode was not preserved'
+[ -x /sbin/init ] || rescue 'systemd init missing'
+log 'Starting systemd; DHCP and password/key SSH; normal serial login has no autologin'
+exec /sbin/init
+rescue 'exec systemd failed'

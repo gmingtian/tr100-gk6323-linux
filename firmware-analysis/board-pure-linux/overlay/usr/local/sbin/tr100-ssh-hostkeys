@@ -1,0 +1,7 @@
+#!/usr/lib/tr100/busybox sh
+# The image builder must exclude all source-template host keys before deployment.
+set -eu
+[ -f /etc/tr100/rootfs-uuid ] && [ -f /etc/tr100/image-tag ] || exit 1
+umask 077
+# -A creates missing keys only; never deletes or replaces existing persistent keys.
+/usr/bin/ssh-keygen -A

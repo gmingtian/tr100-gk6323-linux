@@ -1,0 +1,66 @@
+#!/usr/lib/tr100/busybox sh
+# Explicit local administrator action, never an automatic grant to system users.
+set -efu
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+fail() { echo "TR100 network access: $*" >&2; exit 1; }
+usage() {
+    echo 'Usage: tr100-enable-network [--primary] USER' >&2
+    echo 'Read-only validation: tr100-enable-network --check-files PASSWD GROUP [--primary] USER' >&2
+    exit 2
+}
+check=0
+passwd_file=/etc/passwd group_file=/etc/group
+if [ "${1:-}" = --check-files ]; then
+    [ "$#" -ge 4 ] || usage
+    check=1 passwd_file=$2 group_file=$3
+    shift 3
+fi
+primary=0
+if [ "${1:-}" = --primary ]; then primary=1; shift; fi
+[ "$#" -eq 1 ] || usage
+user=$1
+case "$user" in
+    [a-z_]*) ;;
+    *) fail 'invalid local username' ;;
+esac
+case "$user" in *[!a-z0-9_-]*|root) fail 'invalid or root username';; esac
+[ "${#user}" -le 32 ] || fail 'username is too long'
+if [ "$check" -eq 0 ]; then
+    [ "$(/usr/bin/id -u)" -eq 0 ] || fail 'root is required to change account groups'
+fi
+for file in "$passwd_file" "$group_file"; do
+    [ -f "$file" ] && [ ! -L "$file" ] || fail 'account database must be a regular local file'
+done
+matches=0 target_uid=
+while IFS=: read -r name ignored uid gid rest; do
+    if [ "$name" = "$user" ]; then
+        matches=$((matches+1))
+        case "$uid" in ''|*[!0-9]*) fail 'invalid local UID';; esac
+        [ "$uid" -gt 0 ] || fail 'UID0 accounts are not accepted'
+        target_uid=$uid
+    fi
+done <"$passwd_file"
+[ "$matches" -eq 1 ] || fail 'user must exist exactly once in the local passwd database'
+inet_count=0
+while IFS=: read -r name ignored gid members; do
+    if [ "$name" = inet ]; then
+        inet_count=$((inet_count+1))
+        [ "$gid" = 3003 ] || fail 'inet group must use GID3003'
+    elif [ "$gid" = 3003 ]; then
+        fail 'GID3003 belongs to a conflicting local group'
+    fi
+done <"$group_file"
+[ "$inet_count" -eq 1 ] || fail 'inet group must exist exactly once'
+if [ "$check" -eq 1 ]; then
+    printf 'validated local user=%s uid=%s; read-only plan: ' "$user" "$target_uid"
+    if [ "$primary" -eq 1 ]; then printf 'usermod -g inet %s\n' "$user";
+    else printf 'usermod -a -G inet %s\n' "$user"; fi
+    exit 0
+fi
+if [ "$primary" -eq 1 ]; then
+    echo 'Explicit primary-group change: other access permissions and owned home-file groups may change.' >&2
+    exec /usr/sbin/usermod -g inet -- "$user"
+fi
+# Append membership; do not replace the existing supplementary group list.
+exec /usr/sbin/usermod -a -G inet -- "$user"

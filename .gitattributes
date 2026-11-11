@@ -1,0 +1,2 @@
+# Keep reviewed shell/image-builder sources byte-identical to their pinned SHA256.
+* -text
