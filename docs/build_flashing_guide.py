@@ -66,7 +66,7 @@ def table(rows):
 pieces.append('<header><h1>数码视讯 TR100 纯 Linux 刷入指南</h1><p>本机适配记录与再次安装说明　2026年11月11日</p></header>')
 para('本机已经完成刷入并正常运行。本指南用于保留操作流程，<strong>阅读和下载文档不会触发刷机</strong>。只有需要重新安装时才执行写入步骤；重新刷入会清空现有 Linux 或 Android 的系统和用户数据。')
 para('此方案只针对本次验证的 GK6323V100C、2 GiB 内存、7818182656 字节 eMMC 设备。系统是 Armbian Bookworm armhf 用户态，复用厂商 3.18.24 内核。不是官方通用板型镜像，也不是 HiTool Android 升级包。不要直接复制到其他盒子，否则可能覆盖设备身份或无法启动。')
-pieces.append('<nav>'+''.join(f'<a href="#s{i}">{i} {t}</a>' for i,t in enumerate(['准备与文件校验','进入 fastboot','启动内存维护系统','连接维护系统','切换临时引导环境','正式写入 Linux','提交最终引导环境','重启与验收','故障处理','分区与校验值','环境写入命令附录'],1))+'</nav>')
+pieces.append('<nav>'+''.join(f'<a href="#s{i}">{i} {t}</a>' for i,t in enumerate(['准备与文件校验','进入 fastboot','启动内存维护系统','连接维护系统','切换临时引导环境','正式写入 Linux','提交最终引导环境','重启与验收','故障处理','分区与校验值','环境写入命令附录','HDMI 文字终端选装'],1))+'</nav>')
 
 head(1,'准备与文件校验')
 para('准备原电源、网线、沿用本次已验证接线和电平的 TTL 线。盒子使用独立电源，TTL 的 VCC 不用于给盒子供电。串口参数为 COM4、115200、8N1、无流控。脚本与 SuperCom 不得同时占用 COM4。')
@@ -145,10 +145,10 @@ para('应看到 eMMC 从扇区 16384 读取新内核、Validated persistent root
 code('ssh root@192.168.5.20\n# 密码使用你单独设置并保存的值，本文与仓库不记录密码。', '电脑终端　最终系统登录')
 code('findmnt /\nlsblk\ndf -h /\nsystemctl is-system-running\nsystemctl --failed\ntimedatectl\napt-get update', '最终 Linux　验收')
 para('验收目标：/ 为 mmcblk0p8 的 ext4，根分区约 7.2G；保留必要的七个小引导/硬件分区，旧 Android system/cache/userdata 等分区名不再存在。systemd 为 running、失败服务为 0；时区为 Asia/Shanghai，NTP 同步；APT Debian 源指向腾讯。首次空镜像约可用 6.8G，索引更新后本机约可用 6.7G，具体随安装软件和数据变化。')
-para('本次实际完成了两次默认 eMMC 软件重启、密码及公钥 SSH、腾讯 APT 更新和新建普通用户 HTTPS 联网测试。没有进行物理断电启动测试。HDMI 控制台和桌面未配置，当前控制台为 ttyAMA0；fb0/fb1 节点存在不等于 HDMI 已有画面。Wi-Fi 未验证，网口实测 100 Mbps 全双工。')
+para('基础镜像实际完成了两次默认 eMMC 软件重启、密码及公钥 SSH、腾讯 APT 更新和新建普通用户 HTTPS 联网测试。没有进行物理断电启动测试。该基础刷机包的控制台为 ttyAMA0，未包含后续 HDMI 配置；HDMI 文字终端见第 12 节。Wi-Fi 未验证，网口实测 100 Mbps 全双工。')
 
 head(9,'故障处理')
-table([['现象','处理'],['5.20 登录不上','刷写时处于 RAM 维护系统，使用 5.240 和维护公钥；最终启动后查 DHCP 租约。'],['SSH 提示主机密钥变化','重装与 RAM 重启会生成新密钥。先通过 TTL 核对指纹，仅更新对应 IP 的旧记录；不要关闭全部主机密钥检查。'],['TFTP 超时或 CRC 不符','保持 fastboot，检查 PC 地址、UDP69、允许的 peer 和文件；重新加载成功前不 bootm，不写盘。'],['COM4 被占用','释放 SuperCom 或其他脚本的串口连接，一次仅一个占用者。'],['REFUSED 或任何摘要/读回失败','停止并保留 RAM 和日志，不能删校验条件绕过，也不能提交最终环境。'],['开机卡在 initrd 或 bootstrap','通过 TTL 查看 STOPPED/FAILED 原因。保留实际状态，不自动格式化、猜分区或盲目重刷 bootloader。'],['HDMI 黑屏','本版尚未适配 HDMI 输出，以 SSH/TTL 判断运行状态。'],['大文件 wc 数值异常','维护中仅用 /usr/bin/cat file | /usr/bin/wc -c 的真实管道计数；GNU9.1普通文件快捷路径和 BusyBox大计数均有本次发现的32位问题。']])
+table([['现象','处理'],['5.20 登录不上','刷写时处于 RAM 维护系统，使用 5.240 和维护公钥；最终启动后查 DHCP 租约。'],['SSH 提示主机密钥变化','重装与 RAM 重启会生成新密钥。先通过 TTL 核对指纹，仅更新对应 IP 的旧记录；不要关闭全部主机密钥检查。'],['TFTP 超时或 CRC 不符','保持 fastboot，检查 PC 地址、UDP69、允许的 peer 和文件；重新加载成功前不 bootm，不写盘。'],['COM4 被占用','释放 SuperCom 或其他脚本的串口连接，一次仅一个占用者。'],['REFUSED 或任何摘要/读回失败','停止并保留 RAM 和日志，不能删校验条件绕过，也不能提交最终环境。'],['开机卡在 initrd 或 bootstrap','通过 TTL 查看 STOPPED/FAILED 原因。保留实际状态，不自动格式化、猜分区或盲目重刷 bootloader。'],['HDMI 黑屏','基础镜像需按第12节选装文字终端；本机已确认RGB565路径。服务启动前的早期内核日志仍在TTL。'],['大文件 wc 数值异常','维护中仅用 /usr/bin/cat file | /usr/bin/wc -c 的真实管道计数；GNU9.1普通文件快捷路径和 BusyBox大计数均有本次发现的32位问题。']])
 para('本包未实测独立 BootROM 救砖。原厂环境文件是受控恢复材料，不是数据写入期间的默认环境；用户数据、旧 Android private/securestore/userdata 不具备完整恢复备份。不要根据旧研究记录中被替代的“restore original p2”注释执行回退。')
 
 head(10,'分区与校验值')
@@ -160,6 +160,11 @@ head(11,'环境写入命令附录')
 para('下列代码是操作命令文本，打开文档不会执行。分别保存为 probe-stage.sh 和 final-stage.sh，使用 UTF-8 无 BOM、LF 换行，通过 SCP 上传后仅在已验证的 RAM 维护系统运行。初次原厂到 probe 的操作已实测；兼容最终 p2 再切 probe 的白名单用于本机重装，本文没有再进行第三次整机重刷。最终脚本沿用本次实际提交命令，并额外要求保存的数据完成日志。')
 code(probe,'probe-stage.sh　仅切换到安全 printenv 环境')
 code(final,'final-stage.sh　仅在 DATA_WRITE_COMPLETE 后提交最终环境')
+head(12,'HDMI 文字终端选装')
+para('这项配置是基础刷机包之后增加的功能，不安装图形桌面。本机已确认 RGB565 文字可见、USB 键盘可以登录和输入命令。正式服务在一次受控软件重启后已自动启动并读回正确模式；物理断电启动没有另做验证。本文不把旧 ZIP 说成已经包含该配置。')
+para('从源码仓库下载 hdmi/ 目录并上传盒子，在源码根目录执行下列命令。完整说明和卸载回退命令见仓库 hdmi/README.md。新终端仍要求用户名和密码登录，串口 ttyAMA0 和 SSH 保留。')
+code('apt-get update\napt-get install fbset fbterm fonts-dejavu-core\ninstall -o root -g root -m 0755 hdmi/bin/tr100-hdmi-console /usr/local/sbin/tr100-hdmi-console\ninstall -o root -g root -m 0644 hdmi/systemd/tr100-hdmi-console.service /etc/systemd/system/tr100-hdmi-console.service\n/usr/local/sbin/tr100-hdmi-console --check\nsystemctl mask getty@tty1.service\nsystemctl daemon-reload\nsystemctl enable --now tr100-hdmi-console.service\nsystemctl status tr100-hdmi-console.service --no-pager', '已启动的纯 Linux　root 执行，不在 RAM 维护系统安装')
+para('终端固定为 fb0、1280×720、RGB565、24 像素 DejaVu Sans Mono，经 HDMI 的 1080p60 输出显示。厂商内核没有 fbcon，因此早期 BootROM 和内核启动文字仍只在 TTL；系统进入用户态后由 fbterm 显示本地登录。不要同时启动手工 fbterm、临时测试服务和正式服务。')
 pieces.append('<footer>本机专用实验性适配文档。源码仓库 github.com/gmingtian/tr100-gk6323-linux；镜像、原机备份与登录凭据不随源码提交。文档仅记录和说明操作，不触发任何设备动作。</footer>')
 
 style='''body{font-family:"Microsoft YaHei","Segoe UI",sans-serif;color:#17202a;line-height:1.75;margin:0;background:#f3f5f7}main{max-width:1000px;margin:28px auto;background:white;padding:42px 56px}h1,h2{color:#000;line-height:1.35}h1{font-size:28px;margin:0 0 12px}h2{font-size:22px;margin-top:42px}header p,footer,.label{color:#4b5563}p{margin:13px 0}nav{display:flex;flex-wrap:wrap;gap:8px 20px;margin:26px 0}a{color:#075b96}code{font-family:Consolas,"Microsoft YaHei",monospace}p code,td code{background:#f0f3f5;padding:1px 4px}pre{background:#f5f6f8;border:1px solid #d9d9d9;padding:16px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-all;font-size:13px;line-height:1.65}.label{font-size:13px;margin-top:20px}table{border-collapse:collapse;width:100%;margin:20px 0;font-size:14px}td,th{border:1px solid #d9d9d9;padding:11px 13px;text-align:left;vertical-align:middle}th{background:#e6edf4;color:#000}tr:nth-child(2n+3){background:#f8fafc}footer{margin-top:44px;border-top:1px solid #d9d9d9;padding-top:18px;font-size:13px}@media(max-width:700px){main{padding:24px 20px;margin:0}h1{font-size:24px}}@media print{body{background:white}main{margin:0;padding:0;max-width:none}nav{display:none}pre{font-size:9pt}h2{break-after:avoid}tr{break-inside:avoid}}'''

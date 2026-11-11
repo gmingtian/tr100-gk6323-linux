@@ -20,6 +20,10 @@
 
 子目录说明还保留工作区研究、旧目录与 receipt 的出处引用；这些历史数据或分析材料未随源码发布，不能把引用当作已经包含的输入。核心 Node 相对模块依赖保留在上述原树中。
 
+## HDMI 文字终端
+
+[HDMI 安装与回退](hdmi/README.md)：使用 RGB565 + fbterm 在 tty1 提供本地密码登录，不安装图形桌面。包含开机服务和离线测试，SSH 与 ttyAMA0 保留。原基础镜像不包含此后续配置，刷入后需按该说明选装。
+
 ## 测试
 
 需要 Node.js 22.15+；没有第三方 npm 依赖，无需安装 npm 包。shell policy 测试需要 Bash 与 GNU coreutils、awk、find 等工具。Windows 使用默认安装位置的 Git for Windows Bash；非 Windows 的 npm 测试适配器只将测试中既有的 Windows Bash 路径映射为 `bash`，不改生产脚本。当前完整运行证据来自 Windows；其他环境仍须按这些依赖验证。

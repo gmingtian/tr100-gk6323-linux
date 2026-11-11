@@ -1,0 +1,98 @@
+#!/bin/bash
+# TR100 pure-Linux local password console. Sourceable for offline guard tests.
+tr100_refuse() { printf 'TR100_HDMI REFUSED: %s\n' "$*" >&2; return 1; }
+
+tr100_validate_identity() {
+    [[ "$1" == Linux ]] || { tr100_refuse 'Linux required'; return 1; }
+    [[ "$2" == 0 ]] || { tr100_refuse 'root required'; return 1; }
+    [[ "$3" == 3.18.24_gk6323v100c ]] || { tr100_refuse 'unexpected kernel'; return 1; }
+    [[ "$4" == tr100-pure-linux-20261111 ]] || { tr100_refuse 'unexpected image tag'; return 1; }
+    [[ "$5" == '259:0 ext4' ]] || { tr100_refuse 'persistent p8 ext4 root required'; return 1; }
+}
+
+tr100_check_platform() {
+    local os kernel tag='' root_record
+    [[ $EUID == 0 ]] || { tr100_refuse 'root required'; return 1; }
+    os=$(/usr/bin/uname -s) || return 1
+    kernel=$(/usr/bin/uname -r) || return 1
+    [[ -f /etc/tr100/image-tag && ! -L /etc/tr100/image-tag ]] || { tr100_refuse 'missing image tag'; return 1; }
+    # read -d '' reads the complete file, so extra records cannot be ignored.
+    IFS= read -r -d '' tag < /etc/tr100/image-tag || :
+    [[ "$tag" == $'tr100-pure-linux-20261111\n' ]] || { tr100_refuse 'image tag must be one exact line'; return 1; }
+    root_record=$(/usr/bin/findmnt -rn -o MAJ:MIN,FSTYPE /) || return 1
+    # findmnt column alignment may add spaces. Require exactly one pair.
+    local dev fs extra
+    [[ "$root_record" != *$'\n'* ]] || { tr100_refuse 'ambiguous root mount'; return 1; }
+    read -r dev fs extra <<< "$root_record"
+    [[ -z "$extra" ]] || { tr100_refuse 'ambiguous root mount'; return 1; }
+    tr100_validate_identity "$os" "$EUID" "$kernel" "${tag%$'\n'}" "$dev $fs"
+}
+
+tr100_check_files() {
+    local program
+    for program in /usr/bin/uname /usr/bin/findmnt /usr/bin/stat /usr/bin/fbset /usr/bin/openvt /usr/bin/fbterm /usr/bin/sleep /bin/sh /bin/login; do
+        [[ -f "$program" && -x "$program" ]] || { tr100_refuse "missing executable: $program"; return 1; }
+    done
+    [[ -c /dev/fb0 && ! -L /dev/fb0 && $(/usr/bin/stat -c '%t:%T' /dev/fb0) == 1d:0 ]] || { tr100_refuse 'fb0 must be character device 29:0'; return 1; }
+    [[ -c /dev/tty1 && ! -L /dev/tty1 && $(/usr/bin/stat -c '%t:%T' /dev/tty1) == 4:1 ]] || { tr100_refuse 'tty1 must be character device 4:1'; return 1; }
+}
+
+tr100_validate_mode() {
+    local line geometry=0 rgba=0
+    local -a fields
+    while IFS= read -r line; do
+        read -r -a fields <<< "$line"
+        case "${fields[0]:-}" in
+            geometry)
+                ((geometry+=1))
+                [[ ${#fields[@]} == 6 && "${fields[*]}" == 'geometry 1280 720 1280 2160 16' ]] || { tr100_refuse 'framebuffer geometry mismatch'; return 1; }
+                ;;
+            rgba)
+                ((rgba+=1))
+                [[ ${#fields[@]} == 2 && "${fields[*]}" == 'rgba 5/11,6/5,5/0,0/0' ]] || { tr100_refuse 'framebuffer RGB565 mismatch'; return 1; }
+                ;;
+        esac
+    done <<< "$1"
+    [[ $geometry == 1 && $rgba == 1 ]] || { tr100_refuse 'missing or duplicate framebuffer records'; return 1; }
+}
+
+tr100_hold_fb() { exec 9<>/dev/fb0; }
+tr100_set_mode() { /usr/bin/fbset -fb /dev/fb0 -g 1280 720 1280 2160 16 -rgba 5/11,6/5,5/0,0/0; }
+tr100_get_mode() { /usr/bin/fbset -fb /dev/fb0 -i; }
+tr100_initialize() {
+    local info
+    tr100_hold_fb || { tr100_refuse 'cannot hold fb0 open'; return 1; }
+    tr100_set_mode || { tr100_refuse 'fbset failed'; return 1; }
+    info=$(tr100_get_mode) || { tr100_refuse 'fbset readback failed'; return 1; }
+    tr100_validate_mode "$info"
+}
+tr100_launch() {
+    export FRAMEBUFFER=/dev/fb0
+    # Keep FD 9 open throughout mode initialization and the terminal handoff.
+    exec /usr/bin/openvt -c 1 -f -s -w -- /usr/bin/fbterm --verbose --font-names='DejaVu Sans Mono' --font-size=24 -- /bin/sh -c 'while :; do printf "\033[2J\033[H\n  TR100 LINUX HDMI CONSOLE RGB565\n  Local login - SSH remains available\n\n"; /bin/login; /usr/bin/sleep 1; done'
+}
+tr100_run_start() {
+    tr100_check_platform || return 1
+    tr100_check_files || return 1
+    tr100_initialize || return 1
+    tr100_launch
+}
+tr100_main() {
+    [[ $# -le 1 ]] || { tr100_refuse 'use no arguments, --check, or --plan'; return 1; }
+    case "${1:-}" in
+        --plan)
+            printf '%s\n' 'TR100 HDMI plan: persistent p8 Linux root; hold /dev/fb0 on FD9; RGB565 1280x720 virtual 1280x2160; verify readback; tty1 openvt + fbterm DejaVu Sans Mono 24 + password login loop. No device operations in --plan.'
+            ;;
+        --check)
+            tr100_check_platform || return 1
+            tr100_check_files || return 1
+            printf '%s\n' 'TR100_HDMI CHECK_PASSED (framebuffer not opened; mode not tested)'
+            ;;
+        '') tr100_run_start ;;
+        *) tr100_refuse 'use no arguments, --check, or --plan'; return 1 ;;
+    esac
+}
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
+    set -euo pipefail
+    tr100_main "$@"
+fi

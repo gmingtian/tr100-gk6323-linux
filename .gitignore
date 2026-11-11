@@ -148,3 +148,17 @@
 !/docs/examples/
 /docs/examples/*
 !/docs/examples/final-environment-commit-reference.sh
+
+# Optional HDMI text-console implementation, no runtime captures.
+!/hdmi/
+/hdmi/*
+!/hdmi/README.md
+!/hdmi/bin/
+/hdmi/bin/*
+!/hdmi/bin/tr100-hdmi-console
+!/hdmi/systemd/
+/hdmi/systemd/*
+!/hdmi/systemd/tr100-hdmi-console.service
+!/hdmi/tests/
+/hdmi/tests/*
+!/hdmi/tests/hdmi-console.test.cjs

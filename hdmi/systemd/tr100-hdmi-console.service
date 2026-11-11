@@ -1,0 +1,21 @@
+[Unit]
+Description=TR100 RGB565 HDMI local password console
+Wants=systemd-udev-settle.service
+After=systemd-user-sessions.service systemd-udev-settle.service
+Conflicts=getty@tty1.service
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/tr100-hdmi-console
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=10
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
