@@ -1,6 +1,6 @@
 # TR100 纯 Linux 工具源码
 
-面向数码视讯 TR100 / GK6323V100C 的实验性、设备绑定 Linux 适配工具。用户态方案使用 Armbian Bookworm armhf，配合本机原厂 3.18.24 内核和厂商引导固件；这里不包含内核或厂商二进制，也不宣称官方通用板型支持。
+面向数码视讯 TR100 / GK6323V100C 的实验性、设备绑定 Linux 适配工具。基础方案使用 Armbian Bookworm armhf、本机原厂 3.18.24 内核和厂商引导固件；后续已在本机完成 5.10.165 内核、原生 Docker 和 HDMI 适配，见下方记录。这里不包含内核或厂商二进制，也不宣称官方通用板型支持。
 
 仓库只选择项目脚本、按系统配置定制的覆盖层、静态布局、说明和测试。镜像、备份、设备日志、机器身份、密码、私钥、第三方源码/运行时/安装包及本机输入 JSON 均不随源码提交。原始二进制中的 SHA/UUID 是安全门禁，不是可下载固件或兼容性证明。没有为厂商代码授予许可证；当前未擅自添加仓库许可证，复用前须另行确认相应文件权利。
 
@@ -24,9 +24,13 @@
 
 [HDMI 安装与回退](hdmi/README.md)：使用 RGB565 + fbterm 在 tty1 提供本地密码登录，不安装图形桌面。包含开机服务和离线测试，SSH 与 ttyAMA0 保留。原基础镜像不包含此后续配置，刷入后需按该说明选装。
 
+## 原生 Docker 与 5.10 内核
+
+[源码来源及实机验收](docs/TR100-native-docker.md)：记录 OpenHarmony/Goke 源码版本、内核适配要点、Docker 和自动启动验证，以及驱动空闲等待修复。配套 HDMI 模块加载器、服务依赖、MMZ 和低负载补丁已纳入源码；原基础镜像构建流程仍是 3.18 方案，不会因拉取更新而自动升级设备。
+
 ## 测试
 
-需要 Node.js 22.15+；没有第三方 npm 依赖，无需安装 npm 包。shell policy 测试需要 Bash 与 GNU coreutils、awk、find 等工具。Windows 使用默认安装位置的 Git for Windows Bash；非 Windows 的 npm 测试适配器只将测试中既有的 Windows Bash 路径映射为 `bash`，不改生产脚本。当前完整运行证据来自 Windows；其他环境仍须按这些依赖验证。
+需要 Node.js 22.15+；没有第三方 npm 依赖，无需安装 npm 包。shell policy 测试需要 Bash 与 GNU coreutils、awk、find 等工具。Windows 使用默认安装位置的 Git for Windows Bash；非 Windows 的 npm 测试适配器只将测试中既有的 Windows Bash 路径映射为 `bash`，不改生产脚本。默认测试已在 Windows 和 Linux 环境运行；设备回归须单独在目标机验证。
 
 ```sh
 npm test

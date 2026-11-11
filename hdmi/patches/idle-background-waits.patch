@@ -1,0 +1,105 @@
+--- a/source/common/drv/log/drv_log_ext_k.c
++++ b/source/common/drv/log/drv_log_ext_k.c
+@@ -12,6 +12,7 @@
+ #include <linux/delay.h>
+ #include <linux/rtc.h>
+ #include "gk_kernel_adapt.h"
++#include "gk_thread_idle.h"
+ 
+ #include "gk_type.h"
+ #include "gk_debug.h"
+@@ -455,7 +456,7 @@
+         ret = LOG_FILE_LOCK();
+         if (ret != 0) {
+             WARN_LOG("down_interruptible failed\n");
+-            msleep(10); /* delay 10ms */
++            gk_msleep_idle(10); /* background retry, delay 10ms */
+             continue;
+         }
+ 
+@@ -475,7 +476,7 @@
+         }
+ 
+         if (set_file_flag == GK_FALSE) {
+-            msleep(10); /* delay 10ms */
++            gk_msleep_idle(10); /* background polling, delay 10ms */
+             continue;
+         }
+ 
+@@ -489,7 +490,7 @@
+             drv_log_udisk_save((const gk_s8 *)g_udisk_file_name, g_udisk_buf, read_len);
+         }
+ 
+-        msleep(100); /* delay 100ms */
++        gk_msleep_idle(100); /* background polling, delay 100ms */
+     }
+ 
+     return GK_SUCCESS;
+--- a/source/msp/drv/hdmi/hdmi_2_0/drv_hdmi_intf.c
++++ b/source/msp/drv/hdmi/hdmi_2_0/drv_hdmi_intf.c
+@@ -20,6 +20,7 @@
+ #include <linux/kthread.h>
+ #include <linux/timer.h>
+ #include <linux/delay.h>
++#include "gk_thread_idle.h"
+ #include "hdmi_hal.h"
+ #include "hdmi_platform.h"
+ #include "drv_hdmi_edid.h"
+@@ -1510,11 +1511,11 @@
+             break;
+         }
+         if (hdmi_dev->thread.thread_state == HDMI_THREAD_STATE_STOP) {
+-            msleep(HDMI_THREAD_STATE_WAIT_TIME);
++            gk_msleep_idle(HDMI_THREAD_STATE_WAIT_TIME);
+             continue;
+         }
+         hal_call(hdmi_dev->hal, hal_hdmi_sequencer_handler_process);
+-        msleep(HDMI_THREAD_DELAY);
++        gk_msleep_idle(HDMI_THREAD_DELAY);
+     }
+ 
+     return GK_SUCCESS;
+--- a/source/msp/drv/vo/drv/drv_display.c
++++ b/source/msp/drv/vo/drv/drv_display.c
+@@ -1687,7 +1687,8 @@
+ 
+         disp_thread->thread_event = EVENT_DISP_NOTHING;
+ 
+-        wait_event_timeout(disp_thread->wait_que_head, (disp_thread->thread_event == EVENT_DISP_CSC_CHANGE), HZ);
++        /* Background event wait must not contribute to system load. */
++        wait_event_idle_timeout(disp_thread->wait_que_head, (disp_thread->thread_event == EVENT_DISP_CSC_CHANGE), HZ);
+     }
+ #endif
+     return GK_SUCCESS;
+--- a/source/msp/drv/gfbg/adp/src/drv_gfbg_wbc_mem.c
++++ b/source/msp/drv/gfbg/adp/src/drv_gfbg_wbc_mem.c
+@@ -67,7 +67,8 @@
+             g_gfx_wbc2.wbc_buf_mgr.pre_disp_fmt = g_gfx_wbc2.wbc_buf_mgr.cur_disp_fmt;
+             spin_unlock_irqrestore(&(g_gfx_wbc2.wbc_buf_mgr.buf_lock), lock_flag);
+         }
+-        wait_event_timeout(g_gfx_wbc2.wbc_buf_mgr.wait_queue, (g_gfx_wbc2.wbc_buf_mgr.need_wait_up == GK_TRUE),
++        /* Keep event/timeout behavior while excluding idle work from load. */
++        wait_event_idle_timeout(g_gfx_wbc2.wbc_buf_mgr.wait_queue, (g_gfx_wbc2.wbc_buf_mgr.need_wait_up == GK_TRUE),
+                            msecs_to_jiffies(1000));
+         g_gfx_wbc2.wbc_buf_mgr.need_wait_up = GK_FALSE;
+     }
+--- /dev/null
++++ b/source/common/drv/include/gk_thread_idle.h
+@@ -0,0 +1,17 @@
++#ifndef __GK_THREAD_IDLE_H__
++#define __GK_THREAD_IDLE_H__
++
++#include <linux/jiffies.h>
++#include <linux/sched.h>
++
++/* msleep timing/retry semantics for background polling, without load charge. */
++static inline void gk_msleep_idle(unsigned int msecs)
++{
++    unsigned long timeout = msecs_to_jiffies(msecs) + 1;
++
++    while (timeout) {
++        timeout = schedule_timeout_idle(timeout);
++    }
++}
++
++#endif

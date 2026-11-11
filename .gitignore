@@ -145,6 +145,7 @@
 /docs/*
 !/docs/TR100纯Linux刷入指南.html
 !/docs/build_flashing_guide.py
+!/docs/TR100-native-docker.md
 !/docs/examples/
 /docs/examples/*
 !/docs/examples/final-environment-commit-reference.sh
@@ -156,9 +157,19 @@
 !/hdmi/bin/
 /hdmi/bin/*
 !/hdmi/bin/tr100-hdmi-console
+!/hdmi/bin/tr100-display-modules
 !/hdmi/systemd/
 /hdmi/systemd/*
 !/hdmi/systemd/tr100-hdmi-console.service
+!/hdmi/systemd/tr100-display-modules.service
+!/hdmi/systemd/tr100-hdmi-console.service.d/
+/hdmi/systemd/tr100-hdmi-console.service.d/*
+!/hdmi/systemd/tr100-hdmi-console.service.d/native-5.10.conf
 !/hdmi/tests/
 /hdmi/tests/*
 !/hdmi/tests/hdmi-console.test.cjs
+!/hdmi/tests/check-driver-idle.sh
+!/hdmi/patches/
+/hdmi/patches/*
+!/hdmi/patches/idle-background-waits.patch
+!/hdmi/patches/mmz-vm-mmap-for-native-modules.patch

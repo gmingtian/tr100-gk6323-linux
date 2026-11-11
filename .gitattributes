@@ -1,2 +1,4 @@
 # Keep reviewed shell/image-builder sources byte-identical to their pinned SHA256.
 * -text
+# Unified diff context for an empty line contains a required single space.
+hdmi/patches/*.patch whitespace=-blank-at-eol

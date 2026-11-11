@@ -1,0 +1,32 @@
+--- a/source/common/drv/mmz/drv_mmz_userdev.c
++++ b/source/common/drv/mmz/drv_mmz_userdev.c
+@@ -208,7 +208,9 @@
+ {
+     struct mmz_userdev_info *pmu = file->private_data;
+     unsigned long prot, flags, len, addr;
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0))
+     unsigned long round_up_len;
++#endif
+ 
+     /*
+      * ion_map framwork is used here,so rule must fit to ion ramwork.
+@@ -229,8 +231,6 @@
+     }
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0))
+     down_write(&current->mm->mmap_sem);
+-#else
+-    down_write(&current->mm->mmap_lock);
+ #endif
+     udata->tgid = current->tgid;
+     udata->map_cached = cached;
+@@ -246,8 +246,8 @@
+     addr = do_mmap_pgoff(file, addr, len, prot, flags, pgoff, &round_up_len);
+     up_write(&current->mm->mmap_sem);
+ #else
+-    addr = do_mmap(file, addr, len, prot, flags, pgoff, &round_up_len, NULL);
+-    up_write(&current->mm->mmap_lock);
++    /* vm_mmap is exported to modules and takes mmap_lock internally. */
++    addr = vm_mmap(file, addr, len, prot, flags, pgoff << PAGE_SHIFT);
+ #endif
+     if (IS_ERR_VALUE(addr)) {
+         mmz_error("do_mmap_pgoff(file, 0, %lu, 0x%08lX, 0x%08lX, 0x%08lX) return 0x%08lX\n",

@@ -32,7 +32,8 @@ test('identity gate accepts only Linux root, fixed kernel/tag and p8 ext4', () =
   const valid = ['Linux','0','3.18.24_gk6323v100c','tr100-pure-linux-20261111','259:0 ext4'];
   const invoke = a => run(`tr100_validate_identity ${a.map(x => `'${x}'`).join(' ')}`);
   assert.equal(invoke(valid).status, 0);
-  for (const [i, bad] of [[0,'MINGW64_NT'],[1,'1000'],[2,'4.9'],[3,'tr100-bookworm-20261111'],[4,'0:2 rootfs'],[4,'259:8 ext4'],[4,'259:0 ext4\n259:0 ext4']]) {
+  assert.equal(invoke([valid[0], valid[1], '5.10.165_gk6323-tr100-docker', valid[3], valid[4]]).status, 0);
+  for (const [i, bad] of [[0,'MINGW64_NT'],[1,'1000'],[2,'4.9'],[2,'5.10.165_gk6323v100c'],[2,'5.10.165_gk6323-tr100-docker-extra'],[3,'tr100-bookworm-20261111'],[4,'0:2 rootfs'],[4,'259:8 ext4'],[4,'259:0 ext4\n259:0 ext4']]) {
     const args = [...valid]; args[i] = bad; assert.notEqual(invoke(args).status, 0);
   }
 });

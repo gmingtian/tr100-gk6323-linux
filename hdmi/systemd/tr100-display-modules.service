@@ -1,0 +1,13 @@
+[Unit]
+Description=TR100 native 5.10 HDMI and framebuffer modules
+After=systemd-udev-settle.service
+Before=tr100-hdmi-console.service
+ConditionKernelVersion=5.10.165_gk6323-tr100-docker
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/tr100-display-modules
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

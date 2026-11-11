@@ -5,7 +5,7 @@ tr100_refuse() { printf 'TR100_HDMI REFUSED: %s\n' "$*" >&2; return 1; }
 tr100_validate_identity() {
     [[ "$1" == Linux ]] || { tr100_refuse 'Linux required'; return 1; }
     [[ "$2" == 0 ]] || { tr100_refuse 'root required'; return 1; }
-    [[ "$3" == 3.18.24_gk6323v100c ]] || { tr100_refuse 'unexpected kernel'; return 1; }
+    [[ "$3" == 3.18.24_gk6323v100c || "$3" == 5.10.165_gk6323-tr100-docker ]] || { tr100_refuse 'unexpected kernel'; return 1; }
     [[ "$4" == tr100-pure-linux-20261111 ]] || { tr100_refuse 'unexpected image tag'; return 1; }
     [[ "$5" == '259:0 ext4' ]] || { tr100_refuse 'persistent p8 ext4 root required'; return 1; }
 }
