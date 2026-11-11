@@ -2,9 +2,11 @@
 # Load only the source-built display stack matched to this board and kernel.
 set -eu
 [ "$(id -u)" = 0 ]
-[ "$(uname -r)" = 5.10.165_gk6323-tr100-docker ]
+case "$(uname -r):$(cat /etc/tr100/image-tag)" in
+    5.10.165_gk6323-tr100-docker:tr100-pure-linux-20261111|5.10.165_gk6323-tr100-arm64:tr100-arm64-bookworm-20261111) ;;
+    *) exit 1 ;;
+esac
 [ "$(cat /etc/tr100/rootfs-uuid)" = a8d4abf7-6ae4-4f9b-a39a-ef1b79c63230 ]
-[ "$(cat /etc/tr100/image-tag)" = tr100-pure-linux-20261111 ]
 for display_module in gk_common gk_pdm gk_pq gk_hdmi gk_vou gk_tde gfbg; do
     /sbin/modprobe "$display_module"
 done

@@ -1,0 +1,662 @@
+/dts-v1/;
+
+/ {
+	model = "TR100 GK6323 ARM64 hardware probe";
+	compatible = "gk6323v100c-series";
+	#address-cells = <0x01>;
+	#size-cells = <0x01>;
+	interrupt-parent = <0x01>;
+
+	aliases {
+		net_phy0 = "/soc/gketh@f9c30000/gketh_phy@0";
+		net_phy_addr0 = "/soc/gketh@f9c30000/gketh_phy@0";
+		emmc = "/soc/gkmciv200.MMC@f9830000";
+		sd = "/soc/gkmciv200.SD@f9820000";
+		sdio = "/soc/gkmciv200.SD@f9c40000";
+		ohci0 = "/soc/ohci@f9880000";
+		ehci0 = "/soc/ehci@f9890000";
+		uart0 = "/soc/amba/uart@f8b00000";
+		uart2 = "/soc/amba/uart@f8b02000";
+		uart3 = "/soc/amba/uart@f8b03000";
+		fmc = "/soc/gkfmc100.NAND@f9950000";
+		udc = "/soc/gkudc@f98c0000";
+		otg = "/soc/gkusbotg";
+		i2c0 = "/soc/amba/i2c@f8b10000";
+		i2c1 = "/soc/amba/i2c@f8b11000";
+		i2c2 = "/soc/amba/i2c@f8b12000";
+		spi0 = "/soc/amba/spi@F8B1A000";
+		chiptrim = "/soc/chiptrim";
+	};
+
+	chosen {
+		stdout-path = "/soc/amba/uart@f8b00000:115200n8";
+		bootargs = "console=ttyAMA0,115200 earlycon=pl011,0xf8b00000 loglevel=7 ignore_loglevel rdinit=/init panic=10 mmz=ddr,0,0,44M net.ifnames=0 blkdevparts=mmcblk0:4M(fastboot),4M(bootargs),12M(kernel),4M(deviceinfo),2M(atf),8M(baseparam),8M(pqparam),-(rootfs)";
+	};
+
+	memory@0 { device_type = "memory"; reg = <0 0x80000000>; };
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
+	reserved-memory {
+		#address-cells = <0x01>;
+		#size-cells = <0x01>;
+		ranges;
+
+		firmware@0 { reg = <0 0x01000000>; no-map; };
+
+		atf-staging@8020000 {
+			reg = <0x08020000 0x00200000>;
+			no-map;
+		};
+
+		ram-boot-scratch@40000000 {
+			reg = <0x40000000 0x01000000>;
+			no-map;
+		};
+
+		optee@d200000 {
+			reg = <0xd200000 0x400000>;
+			no-map;
+		};
+	};
+
+	cpus {
+		#address-cells = <0x01>;
+		#size-cells = <0x00>;
+		#cooling-cells = <0x02>;
+
+		cpu-map {
+
+			cluster0 {
+				phandle = <0x08>;
+
+				core0 {
+					cpu = <0x02>;
+				};
+
+				core1 {
+					cpu = <0x03>;
+				};
+
+				core2 {
+					cpu = <0x04>;
+				};
+
+				core3 {
+					cpu = <0x05>;
+				};
+			};
+		};
+
+		cpu@0 {
+			compatible = "arm,cortex-a55";
+			device_type = "cpu";
+			reg = <0x00>;
+			enable-method = "psci";
+			phandle = <0x02>;
+		};
+
+		cpu@1 {
+			compatible = "arm,cortex-a55";
+			device_type = "cpu";
+			reg = <0x100>;
+			enable-method = "psci";
+			phandle = <0x03>;
+		};
+
+		cpu@2 {
+			compatible = "arm,cortex-a55";
+			device_type = "cpu";
+			reg = <0x200>;
+			enable-method = "psci";
+			phandle = <0x04>;
+		};
+
+		cpu@3 {
+			compatible = "arm,cortex-a55";
+			device_type = "cpu";
+			reg = <0x300>;
+			enable-method = "psci";
+			phandle = <0x05>;
+		};
+	};
+
+	interrupt-controller {
+		compatible = "arm,gic-v3";
+		#interrupt-cells = <0x03>;
+		#address-cells = <0x00>;
+		interrupt-controller;
+		reg = <0xf1000000 0x10000 0xf1040000 0x80000>;
+		phandle = <0x01>;
+	};
+
+	clocks {
+
+		xtal_clk {
+			compatible = "fixed-clock";
+			#clock-cells = <0x00>;
+			clock-frequency = <0x16e3600>;
+			clock-output-names = "clk24M";
+			phandle = <0x09>;
+		};
+
+		clk_54m {
+			compatible = "fixed-clock";
+			#clock-cells = <0x00>;
+			clock-frequency = <0x337f980>;
+			clock-output-names = "clk54M";
+		};
+
+		clk_75m {
+			compatible = "fixed-clock";
+			#clock-cells = <0x00>;
+			clock-frequency = <0x47868c0>;
+			clock-output-names = "clk75M";
+			phandle = <0x0b>;
+		};
+	};
+
+	trusted_core {
+		compatible = "trusted_core";
+		interrupts = <0x00 0x40 0x04>;
+	};
+
+	soc {
+		#address-cells = <0x01>;
+		#size-cells = <0x01>;
+		compatible = "simple-bus";
+		device_type = "soc";
+		ranges = <0x00 0x00 0xffffffff>;
+
+		chiptrim {
+			compatible = "chiptrim";
+		};
+
+		gk-sensor@0 {
+			compatible = "arm,gk-thermal";
+			#thermal-sensor-cells = <0x01>;
+			phandle = <0x06>;
+		};
+
+		thermal-zones {
+
+			soc_thermal {
+				polling-delay = <0x3e8>;
+				polling-delay-passive = <0x64>;
+				sustainable-power = <0x9c4>;
+				thermal-sensors = <0x06 0x00>;
+
+				trips {
+
+					trip-point@0 {
+						temperature = <0x17318>;
+						hysteresis = <0x1388>;
+						type = "passive";
+					};
+
+					trip-point@1 {
+						temperature = <0x19a28>;
+						hysteresis = <0x1388>;
+						type = "passive";
+						phandle = <0x07>;
+					};
+
+					trip-point@2 {
+						temperature = <0x1d4c0>;
+						hysteresis = <0x1388>;
+						type = "critical";
+					};
+				};
+
+				cooling-maps {
+
+					map0 {
+						trip = <0x07>;
+						cooling-device = <0x08 0x00 0x04>;
+						contribution = <0x400>;
+					};
+				};
+			};
+		};
+
+		amba {
+			compatible = "arm,amba-bus";
+			#address-cells = <0x01>;
+			#size-cells = <0x01>;
+			interrupt-parent = <0x01>;
+			ranges;
+
+			gpio0 {
+				compatible = "arm,pl061\0arm,primecell";
+				arm,primecell-periphid = <0x41061>;
+				reg = <0xf8b20000 0x1000>;
+				interrupts = <0x00 0x6c 0x04>;
+				gpio-controller;
+				#gpio-cells = <0x02>;
+				interrupt-controller;
+				#interrupt-cells = <0x02>;
+				clocks = <0x09>;
+				clock-names = "apb_pclk";
+			};
+
+			gpio1 {
+				compatible = "arm,pl061\0arm,primecell";
+				arm,primecell-periphid = <0x41061>;
+				reg = <0xf8b21000 0x1000>;
+				interrupts = <0x00 0x6d 0x04>;
+				gpio-controller;
+				#gpio-cells = <0x02>;
+				interrupt-controller;
+				#interrupt-cells = <0x02>;
+				clocks = <0x09>;
+				clock-names = "apb_pclk";
+			};
+
+			gpio2 {
+				compatible = "arm,pl061\0arm,primecell";
+				arm,primecell-periphid = <0x41061>;
+				reg = <0xf8b22000 0x1000>;
+				interrupts = <0x00 0x6e 0x04>;
+				gpio-controller;
+				#gpio-cells = <0x02>;
+				interrupt-controller;
+				#interrupt-cells = <0x02>;
+				clocks = <0x09>;
+				clock-names = "apb_pclk";
+			};
+
+			gpio3 {
+				compatible = "arm,pl061\0arm,primecell";
+				arm,primecell-periphid = <0x41061>;
+				reg = <0xf8b23000 0x1000>;
+				interrupts = <0x00 0x6f 0x04>;
+				gpio-controller;
+				#gpio-cells = <0x02>;
+				interrupt-controller;
+				#interrupt-cells = <0x02>;
+				clocks = <0x09>;
+				clock-names = "apb_pclk";
+			};
+
+			gpio4 {
+				compatible = "arm,pl061\0arm,primecell";
+				arm,primecell-periphid = <0x41061>;
+				reg = <0xf8b24000 0x1000>;
+				interrupts = <0x00 0x70 0x04>;
+				gpio-controller;
+				#gpio-cells = <0x02>;
+				interrupt-controller;
+				#interrupt-cells = <0x02>;
+				clocks = <0x09>;
+				clock-names = "apb_pclk";
+			};
+
+			gpio5 {
+				compatible = "arm,pl061\0arm,primecell";
+				arm,primecell-periphid = <0x41061>;
+				reg = <0xf8004000 0x1000>;
+				interrupts = <0x00 0x71 0x04>;
+				gpio-controller;
+				#gpio-cells = <0x02>;
+				interrupt-controller;
+				#interrupt-cells = <0x02>;
+				clocks = <0x09>;
+				clock-names = "apb_pclk";
+			};
+
+			gpio6 {
+				compatible = "arm,pl061\0arm,primecell";
+				arm,primecell-periphid = <0x41061>;
+				reg = <0xf8b26000 0x1000>;
+				interrupts = <0x00 0x72 0x04>;
+				gpio-controller;
+				#gpio-cells = <0x02>;
+				interrupt-controller;
+				#interrupt-cells = <0x02>;
+				clocks = <0x09>;
+				clock-names = "apb_pclk";
+			};
+
+			gpio7 {
+				compatible = "arm,pl061\0arm,primecell";
+				arm,primecell-periphid = <0x41061>;
+				reg = <0xf8b27000 0x1000>;
+				interrupts = <0x00 0x73 0x04>;
+				gpio-controller;
+				#gpio-cells = <0x02>;
+				interrupt-controller;
+				#interrupt-cells = <0x02>;
+				clocks = <0x09>;
+				clock-names = "apb_pclk";
+			};
+
+			gpio8 {
+				compatible = "arm,pl061\0arm,primecell";
+				arm,primecell-periphid = <0x41061>;
+				reg = <0xf8b28000 0x1000>;
+				interrupts = <0x00 0x74 0x04>;
+				gpio-controller;
+				#gpio-cells = <0x02>;
+				interrupt-controller;
+				#interrupt-cells = <0x02>;
+				clocks = <0x09>;
+				clock-names = "apb_pclk";
+			};
+
+			watchdog@f8a2c000 {
+				compatible = "arm,sp805-wdt\0arm,primecell";
+				arm,primecell-periphid = <0x141805>;
+				reg = <0xf8a2c000 0x1000>;
+				clocks = <0x09>;
+				clock-names = "apb_pclk";
+				timeout-sec = <0x0a>;
+				start_ping_in_kernel = <0x00>;
+			};
+
+			i2c@f8b10000 {
+				compatible = "goke,gk-i2c";
+				reg = <0xf8b10000 0x1000>;
+				interrupts = <0x00 0x26 0x04>;
+				clock-frequency = <0x61a80>;
+				clocks = <0x0a 0x1ac>;
+				clock-names = "apb_pclk";
+				#address-cells = <0x01>;
+				#size-cells = <0x00>;
+			};
+
+			i2c@f8b11000 {
+				compatible = "goke,gk-i2c";
+				reg = <0xf8b11000 0x1000>;
+				interrupts = <0x00 0x27 0x04>;
+				clock-frequency = <0x61a80>;
+				clocks = <0x0a 0x1b0>;
+				clock-names = "apb_pclk";
+				#address-cells = <0x01>;
+				#size-cells = <0x00>;
+			};
+
+			i2c@f8b12000 {
+				compatible = "goke,gk-i2c";
+				reg = <0xf8b12000 0x1000>;
+				interrupts = <0x00 0x28 0x04>;
+				clock-frequency = <0x61a80>;
+				clocks = <0x0a 0x1b4>;
+				clock-names = "apb_pclk";
+				#address-cells = <0x01>;
+				#size-cells = <0x00>;
+			};
+
+			spi@F8B1A000 {
+				compatible = "arm,pl022\0arm,primecell";
+				arm,primecell-periphid = <0x41022>;
+				interrupts = <0x00 0x2d 0x04>;
+				reg = <0xf8b1a000 0x1000>;
+				num-cs = <0x02>;
+				#address-cells = <0x01>;
+				#size-cells = <0x00>;
+				clocks = <0x0a 0x70>;
+				clock-names = "apb_pclk";
+				pl022,rt;
+			};
+
+			ir@f8001000 {
+				compatible = "goke,gk-ir";
+				reg = <0xf8001000 0x1000>;
+				interrupts = <0x00 0x2f 0x04>;
+				clocks = <0x0a 0x384>;
+				linux,rc-map-name = "rc-gk";
+			};
+
+			armv7-pmu {
+				compatible = "arm,cortex-a17-pmu";
+				interrupts = <0x00 0x08 0x04 0x00 0x09 0x04 0x00 0x0a 0x04 0x00 0x0b 0x04>;
+			};
+
+			arm-timer {
+				compatible = "arm,armv8-timer";
+				interrupts = <1 13 4>, <1 14 4>, <1 11 4>, <1 10 4>;
+				clock-frequency = <0x16e3600>;
+			};
+
+			timer@gksp804 {
+				compatible = "goke,gksp804";
+				reg = <0xf8a29000 0x20 0xf8a2a000 0x20 0xf8a2a020 0x20 0xf8a2b000 0x20 0xf8a2b020 0x20>;
+				interrupts = <0x00 0x1a 0x04 0x00 0x3b 0x04 0x00 0x1b 0x04 0x00 0x3c 0x04>;
+				clocks = <0x09>;
+				clock-names = "apb_pclk";
+			};
+
+			uart@f8b00000 {
+				compatible = "arm,pl011\0arm,primecell";
+				arm,primecell-periphid = <0x241011>;
+				reg = <0xf8b00000 0x1000>;
+				interrupts = <0x00 0x31 0x04>;
+				clocks = <0x0b>;
+				clock-names = "apb_pclk";
+				status = "okay";
+			};
+
+			uart@f8b02000 {
+				compatible = "arm,pl011\0arm,primecell";
+				arm,primecell-periphid = <0x241011>;
+				reg = <0xf8b02000 0x1000>;
+				interrupts = <0x00 0x33 0x04>;
+				clocks = <0x0b>;
+				clock-names = "apb_pclk";
+				status = "disabled";
+			};
+
+			uart@f8b03000 {
+				compatible = "arm,pl011\0arm,primecell";
+				arm,primecell-periphid = <0x241011>;
+				reg = <0xf8b03000 0x1000>;
+				interrupts = <0x00 0x34 0x04>;
+				clocks = <0x0b>;
+				clock-names = "apb_pclk";
+				status = "disabled";
+			};
+		};
+
+		gkmciv200.MMC@f9830000 {
+			compatible = "gk6323v100c,gkmciv200";
+			reg = <0xf9830000 0x1000 0xf8a21000 0x40>;
+			interrupts = <0x00 0x23 0x04>;
+			clocks = <0x0a 0xa0>;
+			clock-names = "clk";
+			caps = <0xc0000c47>;
+			caps2 = <0x00>;
+			max-frequency = <0x2faf080>;
+			status = "okay";
+		};
+
+		gkmciv200.SD@f9820000 {
+			compatible = "gk6323v100c,gkmciv200";
+			reg = <0xf9820000 0x1000 0xf8a210c0 0x40>;
+			interrupts = <0x00 0x22 0x04>;
+			clocks = <0x0a 0x9c>;
+			clock-names = "clk";
+			ldo-addr = <0xf8a2011c>;
+			ldo-shift = <0x00>;
+			caps = <0x8007000f>;
+			caps2 = <0x4000>;
+			max-frequency = <0x2faf080>;
+			status = "disabled";
+		};
+
+		gkmciv200.SD@f9c40000 {
+			compatible = "gk6323v100c,gkmciv200";
+			reg = <0xf9c40000 0x1000 0xf8a21090 0x20 0xf8a20008 0x20>;
+			interrupts = <0x00 0x56 0x04>;
+			clocks = <0x0a 0x28c>;
+			clock-names = "clk";
+			caps = <0x8007000f>;
+			caps2 = <0x4000>;
+			max-frequency = <0x2faf080>;
+			status = "disabled";
+			wifi_reset_gpio = <0x23>;
+		};
+
+		gkfmc100.NAND@f9950000 {
+			compatible = "goke.gkfmc100";
+			reg = <0xf9950000 0x100 0xfe200000 0x2176>;
+			interrupts = <0x00 0x36 0x04>;
+			clocks = <0x0a 0x380>;
+			clock-names = "clk";
+			status = "okay";
+		};
+
+		goke_clock {
+			compatible = "gk6323v100c.clock\0goke,clock-reset";
+			reg = <0xf8a22000 0x400 0xf8a20000 0x848>;
+			#clock-cells = <0x01>;
+			#reset-cells = <0x02>;
+			phandle = <0x0a>;
+		};
+
+		gketh@f9c30000 {
+			compatible = "goke,gketh";
+			clocks = <0x0a 0xd0>;
+			clock-names = "clk";
+			reg = <0xf9c30000 0x4000>;
+			interrupts = <0x00 0x48 0x04>;
+			phy-handle = <0x0c>;
+			#address-cells = <0x01>;
+			#size-cells = <0x00>;
+			status = "okay";
+
+			gketh_phy@0 {
+				reg = <0x02>;
+				interrupts = <0x00 0x49 0x04 0x00 0x6b 0x04>;
+				/* Template only: replace with the target device factory MAC. */
+				mac-address = [02 00 00 00 00 01];
+				phy-mode = "mii";
+				phy-gpio-base = <0x00>;
+				phy-gpio-bit = <0x00>;
+				internal-phy;
+				phandle = <0x0c>;
+			};
+		};
+
+		ehci@f9890000 {
+			compatible = "generic-ehci";
+			reg = <0xf9890000 0x10000>;
+			interrupts = <0x00 0x42 0x04>;
+			clocks = <0x0a 0xb8>;
+			clock-names = "clk";
+			status = "okay";
+		};
+
+		ohci@f9880000 {
+			compatible = "generic-ohci";
+			reg = <0xf9880000 0x10000>;
+			interrupts = <0x00 0x43 0x04>;
+			clocks = <0x0a 0xb8>;
+			clock-names = "clk";
+			status = "okay";
+		};
+
+		gkudc@f98c0000 {
+			compatible = "gkudc";
+			reg = <0xf98c0000 0x40000>;
+			interrupts = <0x00 0x44 0x04>;
+			clocks = <0x0a 0xb8>;
+			clock-names = "clk";
+			status = "okay";
+		};
+
+		gkusbotg {
+			compatible = "gkusbotg";
+			reg = <0xf9880000 0x10000 0xf9890000 0x10000 0xf8a2012c 0x04>;
+			host_time = <0x5dc 0x04>;
+			device_time = <0x3e8 0x04>;
+			status = "okay";
+		};
+
+		gkddr_watchpoint@F8A36000 {
+			compatible = "goke.ddr_watchpoint";
+			reg = <0xf8a36000 0x1000>;
+			interrupts = <0x00 0x1f 0x04>;
+		};
+
+		gkddr_watchzone@F8A35000 {
+			compatible = "goke.ddr_watchzone";
+			reg = <0xf8a35000 0x1000>;
+			interrupts = <0x00 0x1f 0x04>;
+		};
+
+		regulator@f8a23020 {
+			compatible = "goke,gk6323v100c-volt";
+			reg = <0xf8a2301c 0x04>;
+			reg-names = "Goke GPU Regulator";
+			regulator-name = "vdd-gpu";
+			regulator-min-microvolt = <0x30d40>;
+			regulator-max-microvolt = <0xd1f60>;
+			regulator-always-on;
+			status = "okay";
+			phandle = <0x0d>;
+		};
+
+		gpu@f9200000 {
+			compatible = "arm,mali-450\0arm,mali-utgard";
+			interrupt-parent = <0x01>;
+			reg = <0xf9200000 0x10000>;
+			interrupts = <0x00 0x5e 0x04 0x00 0x5e 0x04 0x00 0x5e 0x04 0x00 0x5e 0x04 0x00 0x5e 0x04 0x00 0x5e 0x04 0x00 0x5e 0x04 0x00 0x5e 0x04>;
+			interrupt-names = "IRQGP\0IRQGPMMU\0IRQPP0\0IRQPPMMU0\0IRQPP1\0IRQPPMMU1\0IRQPMU\0IRQPP";
+			pmu_domain_config = <0x01 0x02 0x02 0x00 0x00 0x00 0x00 0x00 0x00 0x01 0x02 0x00>;
+			pmu_switch_delay = <0x1ff>;
+			#cooling-cells = <0x02>;
+			clocks = <0x0a 0x124>;
+			clock-names = "clk_mali";
+			mali-supply = <0x0d>;
+			default-frequency = <0x202fbf00>;
+			max-utilization = <0x3c>;
+			min-utilization = <0x1e>;
+			max-frequency = <0x283baec0>;
+			min-frequency = <0xbebc200>;
+			operating-points-tt = <0xbebc200 0x30d40 0x11e1a300 0x493e0 0x17d78400 0x61a80 0x1c9c3800 0x75300 0x202fbf00 0x83d60 0x283baec0 0xa4cb8 0x33428f00 0xd1f60>;
+			cooling-min-state = <0x00>;
+			cooling-max-state = <0x06>;
+			status = "okay";
+		};
+
+		goke_hdmitx {
+			compatible = "gk6323v100c.hdmitx";
+			under594m-y420;
+			native = <0x02>;
+			fast_wakeup_tv = <0x00>;
+		};
+
+		virtdev {
+			compatible = "virt-device";
+			interrupts = <0x00 0x24 0x04 0x00 0x25 0x04 0x00 0x2f 0x04 0x00 0x2f 0x04 0x00 0x30 0x04 0x00 0x30 0x04 0x00 0x47 0x04 0x00 0x4b 0x04 0x00 0x52 0x04 0x00 0x54 0x04 0x00 0x58 0x04 0x00 0x5a 0x04 0x00 0x5b 0x04 0x00 0x5b 0x04 0x00 0x5d 0x04 0x00 0x5e 0x04 0x00 0x5f 0x04 0x00 0x5f 0x04 0x00 0x60 0x04 0x00 0x61 0x04 0x00 0x65 0x04 0x00 0x66 0x04 0x00 0x68 0x04 0x00 0x69 0x04 0x00 0x6a 0x04 0x00 0x7e 0x04 0x00 0x88 0x04 0x00 0x89 0x04 0x00 0x8a 0x04 0x00 0x8b 0x04 0x00 0x92 0x04 0x00 0x93 0x04 0x00 0x94 0x04 0x00 0x94 0x04 0x00 0x95 0x04 0x00 0x96 0x04 0x00 0x9d 0x04>;
+			interrupt-names = "sci0\0sci1\0ir_std\0ir_s2\0keyled_ct1642\0keyled_std\0gsf0\0multicipher\0dmx\0aiao\0hdmi\0vdp\0tde\0gfx2d\0vpss0\0gpu\0vdec_vdh\0mdma_irq\0png\0jpeg\0venc\0jpge\0vdec_scd\0vdec_vdh_safe\0vdec_scd_safe\0cipher\0vdh_pxp_safe\0vdh_pxp\0vdh_bd_safe\0vdh_bd\0SecInvokeirq\0hdmi_cec\0mmu_vdh_safe\0mmu_vdh_s\0mmu_vdh\0pastc\0sm2";
+		};
+	};
+
+	firmware {
+
+		android {
+			compatible = "android,firmware";
+
+			fstab {
+				compatible = "android,fstab";
+
+				vendor {
+					compatible = "android,vendor";
+					dev = "/dev/block/platform/soc/f9830000.gkmciv200.MMC/by-name/vendor";
+					type = "ext4";
+					mnt_flags = "ro,barrier=1,inode_readahead_blks=8";
+					fsmgr_flags = "wait";
+				};
+			};
+		};
+
+		optee {
+			compatible = "linaro,optee-tz";
+			method = "smc";
+		};
+	};
+};

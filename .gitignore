@@ -173,3 +173,24 @@
 /hdmi/patches/*
 !/hdmi/patches/idle-background-waits.patch
 !/hdmi/patches/mmz-vm-mmap-for-native-modules.patch
+
+# Reviewed ARM64 sources, configuration and native capability tests only.
+!/arm64/
+/arm64/*
+!/arm64/README.md
+!/arm64/kernel.config
+!/arm64/tr100.dts
+!/arm64/init
+!/arm64/patches/
+/arm64/patches/*
+!/arm64/patches/*.patch
+!/arm64/temperature/
+/arm64/temperature/*
+!/arm64/temperature/*.c
+!/arm64/temperature/*.h
+!/arm64/temperature/Makefile
+!/arm64/tests/
+/arm64/tests/*
+!/arm64/tests/*.c
+!/arm64/tests/*.sh
+!/arm64/tests/*.S

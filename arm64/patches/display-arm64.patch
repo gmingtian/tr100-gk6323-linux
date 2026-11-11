@@ -1,0 +1,95 @@
+--- a/cfg.mak
++++ b/cfg.mak
+@@ -21,12 +21,12 @@
+ #
+ # System Config
+ #
+-CFG_GK_32BIT_SYSTEM=y
+-# CFG_GK_64BIT_SYSTEM is not set
++# CFG_GK_32BIT_SYSTEM is not set
++CFG_GK_64BIT_SYSTEM=y
+ CFG_GK_USER_SPACE_LIB=y
+-# CFG_GK_USER_SPACE_LIB64 is not set
++CFG_GK_USER_SPACE_LIB64=y
+ # CFG_GK_USER_SPACE_ALL_LIB is not set
+-CFG_GK_CPU_ARCH=arm
++CFG_GK_CPU_ARCH=arm64
+ 
+ #
+ # Toolchains Config
+--- a/source/common/drv/log/drv_log_ext.c
++++ b/source/common/drv/log/drv_log_ext.c
+@@ -3,6 +3,7 @@
+  */
+ 
+ #include <linux/seq_file.h>
++#include <linux/compat.h>
+ #include "gk_type.h"
+ #include "gk_debug.h"
+ #include "gk_drv_dev.h"
+--- a/source/common/drv/mmz/drv_mmz_userdev.c
++++ b/source/common/drv/mmz/drv_mmz_userdev.c
+@@ -931,7 +931,7 @@
+ 
+     ret = map_file->f_op->mmap(map_file, vma);
+     fput(map_file);
+-    sys_close(map_fd);
++    ksys_close(map_fd);
+ 
+     return ret;
+ err:
+--- a/source/common/drv/userproc/drv_user_proc.c
++++ b/source/common/drv/userproc/drv_user_proc.c
+@@ -3,6 +3,7 @@
+  */
+ 
+ #include <linux/module.h>
++#include <linux/compat.h>
+ #include <linux/moduleparam.h>
+ #include <linux/types.h>
+ #include <linux/fs.h>
+--- a/source/msp/drv/gfbg/src/drv_gfbg_osr.c
++++ b/source/msp/drv/gfbg/src/drv_gfbg_osr.c
+@@ -1,3 +1,4 @@
++#include <linux/compat.h>
+ /*
+  * Copyright (c) Hunan Goke,Chengdu Goke,Shandong Goke. 2021. All rights reserved.
+  */
+--- a/source/msp/drv/hdmi/hdmi_2_0/drv_hdmi_intf.c
++++ b/source/msp/drv/hdmi/hdmi_2_0/drv_hdmi_intf.c
+@@ -1,3 +1,4 @@
++#include <linux/compat.h>
+ /*
+  * Copyright (c) Hunan Goke,Chengdu Goke,Shandong Goke. 2021. All rights reserved.
+  */
+--- a/source/msp/drv/pdm/drv_pdm_intf.c
++++ b/source/msp/drv/pdm/drv_pdm_intf.c
+@@ -1,3 +1,4 @@
++#include <linux/compat.h>
+ /*
+  * Copyright (c) Hunan Goke,Chengdu Goke,Shandong Goke. 2021. All rights reserved.
+  */
+--- a/source/msp/drv/pq/hal/common/pq_hal_comm.c
++++ b/source/msp/drv/pq/hal/common/pq_hal_comm.c
+@@ -671,8 +671,8 @@
+ 
+     addr = VDP_REGS_ADDR + (gk_u32)(uintptr_t)a - (gk_u32)(uintptr_t)(&(g_vdp_reg_mem->voctrl.u32));
+     if ((addr >= 0xf8cc7004) && (addr <= 0xf8cc704c)) {
+-        addr = (addr - 0xf8cc7004 + (gk_u32)(uintptr_t)g_sharp_cfg_buff.start_vir_addr);
+-        a = (gk_u32 *)(uintptr_t)addr;
++        a = (const volatile gk_u32 *)((uintptr_t)g_sharp_cfg_buff.start_vir_addr
++                                      + (addr - 0xf8cc7004));
+     }
+ 
+     return (*a);
+--- a/source/msp/drv/tde/include/tde_define.h
++++ b/source/msp/drv/tde/include/tde_define.h
+@@ -6,7 +6,7 @@
+ #define __SOURCE_MSP_DRV_TDE_INCLUDE_DEFINE__
+ 
+ #ifndef GK_BUILD_IN_BOOT
+-#include <asm/uaccess.h>
++#include <linux/uaccess.h>
+ #include <linux/time.h>
+ #include <linux/mm.h>
+ #include <linux/hardirq.h>

@@ -2,3 +2,5 @@
 * -text
 # Unified diff context for an empty line contains a required single space.
 hdmi/patches/*.patch whitespace=-blank-at-eol
+# ARM64 patches retain kernel context indentation and empty context lines.
+arm64/patches/*.patch whitespace=-blank-at-eol,-space-before-tab

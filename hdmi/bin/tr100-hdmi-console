@@ -5,8 +5,10 @@ tr100_refuse() { printf 'TR100_HDMI REFUSED: %s\n' "$*" >&2; return 1; }
 tr100_validate_identity() {
     [[ "$1" == Linux ]] || { tr100_refuse 'Linux required'; return 1; }
     [[ "$2" == 0 ]] || { tr100_refuse 'root required'; return 1; }
-    [[ "$3" == 3.18.24_gk6323v100c || "$3" == 5.10.165_gk6323-tr100-docker ]] || { tr100_refuse 'unexpected kernel'; return 1; }
-    [[ "$4" == tr100-pure-linux-20261111 ]] || { tr100_refuse 'unexpected image tag'; return 1; }
+    case "$3:$4" in
+        3.18.24_gk6323v100c:tr100-pure-linux-20261111|5.10.165_gk6323-tr100-docker:tr100-pure-linux-20261111|5.10.165_gk6323-tr100-arm64:tr100-arm64-bookworm-20261111) ;;
+        *) tr100_refuse 'unexpected kernel or image tag'; return 1 ;;
+    esac
     [[ "$5" == '259:0 ext4' ]] || { tr100_refuse 'persistent p8 ext4 root required'; return 1; }
 }
 
@@ -18,7 +20,7 @@ tr100_check_platform() {
     [[ -f /etc/tr100/image-tag && ! -L /etc/tr100/image-tag ]] || { tr100_refuse 'missing image tag'; return 1; }
     # read -d '' reads the complete file, so extra records cannot be ignored.
     IFS= read -r -d '' tag < /etc/tr100/image-tag || :
-    [[ "$tag" == $'tr100-pure-linux-20261111\n' ]] || { tr100_refuse 'image tag must be one exact line'; return 1; }
+    [[ "$tag" == $'tr100-pure-linux-20261111\n' || "$tag" == $'tr100-arm64-bookworm-20261111\n' ]] || { tr100_refuse 'image tag must be one exact line'; return 1; }
     root_record=$(/usr/bin/findmnt -rn -o MAJ:MIN,FSTYPE /) || return 1
     # findmnt column alignment may add spaces. Require exactly one pair.
     local dev fs extra

@@ -1,0 +1,480 @@
+--- a/arch/arm64/Kconfig.platforms
++++ b/arch/arm64/Kconfig.platforms
+@@ -1,5 +1,12 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ menu "Platform selection"
++
++config ARCH_GK6323V100C
++	bool "Goke GK6323V100C platforms"
++	select COMMON_CLK
++	select RESET_CONTROLLER
++	help
++	  Enable GK6323 clock, eMMC and Ethernet platform drivers.
+ 
+ config ARCH_ACTIONS
+ 	bool "Actions Semi Platforms"
+--- a/arch/arm64/include/asm/io.h
++++ b/arch/arm64/include/asm/io.h
+@@ -168,6 +168,7 @@
+ extern void __iomem *ioremap_cache(phys_addr_t phys_addr, size_t size);
+ 
+ #define ioremap(addr, size)		__ioremap((addr), (size), __pgprot(PROT_DEVICE_nGnRE))
++#define ioremap_nocache(addr, size)	ioremap((addr), (size))
+ #define ioremap_wc(addr, size)		__ioremap((addr), (size), __pgprot(PROT_NORMAL_NC))
+ 
+ /*
+--- a/arch/arm64/kernel/setup.c
++++ b/arch/arm64/kernel/setup.c
+@@ -329,6 +329,12 @@
+ 	     pr_warn(FW_BUG "Kernel image misaligned at boot, please fix your bootloader!");
+ 
+ 	arm64_memblock_init();
++#ifdef CONFIG_ARCH_GK6323V100C
++	{
++		extern void gk_arm64_import_boot_params_early(void);
++		gk_arm64_import_boot_params_early();
++	}
++#endif
+ 
+ 	paging_init();
+ 
+--- a/arch/arm64/mm/init.c
++++ b/arch/arm64/mm/init.c
+@@ -42,6 +42,10 @@
+ #include <linux/sizes.h>
+ #include <asm/tlb.h>
+ #include <asm/alternative.h>
++
++#if defined(CONFIG_ARCH_GK6323V100C)
++extern u64 g_ddrsize;
++#endif
+ 
+ /*
+  * We need to be able to catch inadvertent references to memstart_addr
+@@ -472,6 +476,9 @@
+ 	/*
+ 	 * Reserve the CMA area after arm64_dma_phys_limit was initialised.
+ 	 */
++#if defined(CONFIG_ARCH_GK6323V100C)
++	g_ddrsize = memblock_phys_mem_size();
++#endif
+ 	dma_contiguous_reserve(arm64_dma_phys_limit);
+ 
+ 	/*
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -6,7 +6,7 @@
+ # Rewritten to use lists instead of if-statements.
+ #
+ 
+-obj-y				+= goke/
++obj-$(CONFIG_ARCH_GK6323V100C)	+= goke/
+ 
+ ifeq ($(CONFIG_MSP),y)
+ obj-y += common/
+--- a/drivers/goke/Makefile
++++ b/drivers/goke/Makefile
+@@ -1,5 +1,9 @@
+ 
++ifeq ($(CONFIG_ARM64),y)
++obj-y += soc/ clk/ arm64-platform.o misc/export_sym.o kapi/mem.o
++else
+ obj-y += kapi/ misc/ soc/ clk/ atags/ flash_stats/ ir/
++endif
+ 
+ obj-y += securec/
+ obj-$(CONFIG_BLK_DEV_RAM)		+= initmrd/
+--- a/drivers/mmc/host/gkmciv300/gkmciv300.c
++++ b/drivers/mmc/host/gkmciv300/gkmciv300.c
+@@ -39,6 +39,9 @@
+ #define gkmci_pr_dts DBG_OUT
+ extern u32 g_emmc_boot_tuning_phase;
+ extern u32 g_emmc_boot_dll_element;
++#ifdef CONFIG_ARM64
++extern bool g_emmc_boot_params_valid;
++#endif
+ 
+ /*************************************************************************/
+ #if defined(CONFIG_ARCH_GK6323V100C)
+@@ -1416,6 +1419,11 @@
+ 	struct gkmciv300_host *host = NULL;
+ 	struct device_node *np = pdev->dev.of_node;
+ 
++#ifdef CONFIG_ARM64
++	if (!g_emmc_boot_params_valid)
++		return -ENODEV;
++#endif
++
+ 	gkmci_trace(2, "begin");
+ 
+ 	mmc = mmc_alloc_host(sizeof(struct gkmciv300_host), &pdev->dev);
+--- a/drivers/net/ethernet/gketh/gketh.c
++++ b/drivers/net/ethernet/gketh/gketh.c
+@@ -326,7 +326,7 @@
+ 	skb->data_len = 0;
+ 	skb->cloned = 0;
+ 	skb->dev = priv->ndev;
+-	atomic_inc(&skb->users);
++	refcount_inc(&skb->users);
+ 	return skb;
+ }
+ #endif
+--- a/drivers/of/fdt.c
++++ b/drivers/of/fdt.c
+@@ -1175,13 +1175,19 @@
+ 
+ bool __init early_init_dt_verify(void *params)
+ {
++#if defined(CONFIG_ARCH_GK6323V100C) && !defined(CONFIG_ARM64)
+ 	extern void *fdt_init_gk(void *fdt);
++#endif
+ 
+ 	if (!params)
+ 		return false;
+ 
+ 	/* Setup flat device-tree pointer */
++#if defined(CONFIG_ARCH_GK6323V100C) && !defined(CONFIG_ARM64)
+ 	initial_boot_params = fdt_init_gk(params);
++#else
++	initial_boot_params = params;
++#endif
+ 
+ 	/* check device tree validity */
+ 	if (fdt_check_header(params)){
+--- a/drivers/staging/android/ion/compat_ion.c
++++ b/drivers/staging/android/ion/compat_ion.c
+@@ -213,7 +213,7 @@
+ 	return err;
+ }
+ 
+-static int compat_put_smmu_data(struct compat_ion_map_iommu_data __user *data33,
++static int compat_put_smmu_data(struct compat_ion_map_iommu_data __user *data32,
+                                 struct ion_map_iommu_data __user *data)
+ {
+ 	compat_int_t i;
+--- a/drivers/staging/android/ion/goke/goke_ion.c
++++ b/drivers/staging/android/ion/goke/goke_ion.c
+@@ -3,6 +3,7 @@
+  */
+ 
+ #include <linux/err.h>
++#include <linux/dma-map-ops.h>
+ #include <linux/platform_device.h>
+ #include <linux/slab.h>
+ #include <linux/module.h>
+@@ -20,6 +21,8 @@
+ 
+ struct ion_client *common_ion_client_create(const char *name)
+ {
++	if (IS_ERR_OR_NULL(g_idev))
++		return ERR_PTR(-ENODEV);
+ 	return ion_client_create(g_idev, name);
+ }
+ EXPORT_SYMBOL(common_ion_client_create);
+@@ -38,12 +41,17 @@
+ 
+ 	g_num_heaps = pdata->nr;
+ 
+-	g_heaps = kzalloc(sizeof(struct ion_heap *) * pdata->nr, GFP_KERNEL);
++	g_heaps = kcalloc(pdata->nr, sizeof(*g_heaps), GFP_KERNEL);
++	if (!g_heaps)
++		return -ENOMEM;
+ 
+ 	g_idev = ion_device_create(NULL);
+ 	if (IS_ERR_OR_NULL(g_idev)) {
++		err = g_idev ? PTR_ERR(g_idev) : -ENOMEM;
++		g_idev = NULL;
+ 		kfree(g_heaps);
+-		return PTR_ERR(g_idev);
++		g_heaps = NULL;
++		return err;
+ 	}
+ 
+ 	/* create the heaps as specified in the board file */
+@@ -54,7 +62,7 @@
+ 
+ 		g_heaps[i] = ion_heap_create(heap_data);
+ 		if (IS_ERR_OR_NULL(g_heaps[i])) {
+-			err = PTR_ERR(g_heaps[i]);
++			err = g_heaps[i] ? PTR_ERR(g_heaps[i]) : -ENOMEM;
+ 			goto err;
+ 		}
+ 		ion_device_add_heap(g_idev, g_heaps[i]);
+@@ -77,11 +85,13 @@
+ 	return 0;
+ err:
+ 	for (i = 0; i < g_num_heaps; i++) {
+-		if (g_heaps[i])
++		if (!IS_ERR_OR_NULL(g_heaps[i]))
+ 			ion_heap_destroy(g_heaps[i]);
+ 	}
+ 	kfree(g_heaps);
+ 	g_heaps = NULL;
++	ion_device_destroy(g_idev);
++	g_idev = NULL;
+ 	return err;
+ }
+ 
+@@ -92,8 +102,10 @@
+ 
+ 	ion_device_destroy(idev);
+ 	for (i = 0; i < g_num_heaps; i++)
+-		ion_heap_destroy(g_heaps[i]);
++		if (!IS_ERR_OR_NULL(g_heaps[i]))
++			ion_heap_destroy(g_heaps[i]);
+ 
++	g_idev = NULL;
+ 	kfree(g_heaps);
+ 	g_heaps = NULL;
+ 	return 0;
+@@ -116,9 +128,6 @@
+ 
+ static void __exit gk_ion_exit(void)
+ {
+-	if (g_idev)
+-		ion_device_destroy(g_idev);
+-
+ 	platform_driver_unregister(&g_gk_ion_driver);
+ }
+ 
+--- a/drivers/staging/android/ion/ion.c
++++ b/drivers/staging/android/ion/ion.c
+@@ -17,6 +17,7 @@
+ 
+ #include <linux/atomic.h>
+ #include <linux/device.h>
++#include <linux/dma-map-ops.h>
+ #include <linux/err.h>
+ #include <linux/file.h>
+ #include <linux/freezer.h>
+@@ -1177,6 +1178,14 @@
+ {
+ 	struct scatterlist sg;
+ 
++#ifdef CONFIG_ARM64
++	/* Newly allocated raw pages have no DMA mapping or device yet. */
++	if (!dev) {
++		arch_sync_dma_for_device(page_to_phys(page), size, dir);
++		return;
++	}
++#endif
++
+ 	sg_init_table(&sg, 1);
+ 	sg_set_page(&sg, page, size, 0);
+ 	/*
+--- a/drivers/staging/android/ion/ion_page_pool.c
++++ b/drivers/staging/android/ion/ion_page_pool.c
+@@ -163,8 +163,7 @@
+ 	pool->order = order;
+ 	mutex_init(&pool->mutex);
+ 	plist_node_init(&pool->list, order);
+-	if (cached)
+-		pool->cached = true;
++	pool->cached = cached;
+ 
+ 	return pool;
+ }
+--- a/drivers/staging/android/ion/ion_system_heap.c
++++ b/drivers/staging/android/ion/ion_system_heap.c
+@@ -19,6 +19,7 @@
+ #include <linux/err.h>
+ #include <linux/highmem.h>
+ #include <linux/mm.h>
++#include <linux/memblock.h>
+ #include <linux/scatterlist.h>
+ #include <linux/seq_file.h>
+ #include <linux/slab.h>
+@@ -382,7 +383,13 @@
+ {
+ 	int i;
+ 
+-#ifdef CONFIG_ARM64
++#if defined(CONFIG_ARM64) && defined(CONFIG_ARCH_GK6323V100C)
++	/* TR100 has 2 GiB of addressable RAM. Refuse an unsupported >4GiB map. */
++	if (max_pfn > (1UL << (32 - PAGE_SHIFT)))
++		return -ERANGE;
++	high_order_gfp_flags |= GFP_HIGHUSER;
++	low_order_gfp_flags |= GFP_HIGHUSER;
++#elif defined(CONFIG_ARM64)
+ 	extern phys_addr_t dma_zone_total_size;
+ 	/*
+ 	 * this is for long-short-leg
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -1321,7 +1321,9 @@
+ 
+ 	return retval;
+ }
++#ifndef CONFIG_ARCH_HAS_SYSCALL_WRAPPER
+ EXPORT_SYMBOL(sys_close);
++#endif
+ 
+ /**
+  * close_range() - Close all file descriptors in a given range.
+--- a/drivers/goke/arm64-platform.c
++++ b/drivers/goke/arm64-platform.c
+@@ -0,0 +1,135 @@
++// SPDX-License-Identifier: GPL-2.0
++/* Import selected firmware ATAGS without replacing the ARM64 device tree. */
++#include <linux/init.h>
++#include <linux/export.h>
++#include <linux/io.h>
++#include <linux/memblock.h>
++#include <linux/printk.h>
++#include <linux/sizes.h>
++#include <linux/string.h>
++#include <linux/spinlock.h>
++#include <linux/types.h>
++#include "gk_arm64_boot_params.h"
++
++u64 g_ddrsize;
++u32 g_emmc_boot_tuning_phase = 3;
++u32 g_emmc_boot_dll_element;
++bool g_emmc_boot_params_valid;
++static char g_sdk_version[64] = "unknown";
++static unsigned char g_params[2048];
++static unsigned g_params_len;
++static DEFINE_SPINLOCK(g_params_lock);
++
++const char *get_sdkversion(void) { return g_sdk_version; }
++EXPORT_SYMBOL(get_sdkversion);
++
++int get_param_data(const char *name, char *buf, unsigned int buflen)
++{
++ const unsigned char *data; unsigned size; unsigned long irqflags;
++ int ret;
++ if (!name || !*name || !buf) return -2;
++ spin_lock_irqsave(&g_params_lock, irqflags);
++ ret = gk_boot_param_find(g_params, g_params_len, name, &data, &size);
++ if (ret != 1) { ret = -1; goto out; }
++ if (size > buflen) { ret = -2; goto out; }
++ memcpy(buf, data, size); ret = size;
++ out: spin_unlock_irqrestore(&g_params_lock, irqflags); return ret;
++}
++EXPORT_SYMBOL(get_param_data);
++
++int set_param_data(const char *name, char *buf, unsigned int buflen)
++{
++ const unsigned char *data; unsigned size; unsigned long irqflags; int ret;
++ if (!name || !buf || strcmp(name, "pdm_tag")) return -2;
++ spin_lock_irqsave(&g_params_lock, irqflags);
++ ret = gk_boot_param_find(g_params, g_params_len, name, &data, &size);
++ if (ret != 1 || buflen > size) { ret = -2; goto out; }
++ memcpy((void *)data, buf, buflen);
++ memset((void *)data + buflen, 0, size - buflen);
++ ret = buflen;
++ out: spin_unlock_irqrestore(&g_params_lock, irqflags); return ret;
++}
++EXPORT_SYMBOL(set_param_data);
++
++/* Firmware display blobs remain reserved throughout this kernel's lifetime.
++ * The ARM32 SDK's unconditional page freeing is unsafe on ARM64. */
++int pdm_free_reserve_mem(u32 addr, u32 size)
++{
++ pr_warn_once("TR100: retaining firmware display buffers (no unsafe page release)\n");
++ return -EOPNOTSUPP;
++}
++EXPORT_SYMBOL(pdm_free_reserve_mem);
++
++int pdm_get_hashtable(u32 *addr, u32 *size)
++{
++ if (!addr || !size) return -EINVAL;
++ *addr = 0; *size = 0;
++ return 0; /* This firmware's verified PDM tag has no hash-table item. */
++}
++EXPORT_SYMBOL(pdm_get_hashtable);
++
++static int __init gk_arm64_reserve_pdm(const char *key)
++{
++ char text[512], *next, *item; int len, count = 0;
++ len = get_param_data(key, text, sizeof(text) - 1);
++ if (len == -2) return -EINVAL;
++ if (len < 0) return 0;
++ text[len] = 0; next = text;
++ while ((item = strsep(&next, " ")) != NULL) {
++  char *name, *address, *length, *flags; unsigned long base, bytes;
++  if (!*item) continue;
++  name = strsep(&item, "=");
++  if (!item) return -EINVAL;
++  if (!strcmp(name, "version")) continue;
++  address = strsep(&item, ","); length = strsep(&item, ","); flags = item;
++  if (++count > 8 || !address || !length ||
++      (flags && strcmp(flags, "nosnapshot")) ||
++      kstrtoul(address, 0, &base) || kstrtoul(length, 0, &bytes) ||
++      !bytes || (base | bytes) & (PAGE_SIZE - 1) ||
++      base >= SZ_2G || bytes > SZ_2G - base ||
++      !memblock_is_region_memory(base, bytes) ||
++      memblock_is_region_reserved(base, bytes)) return -EINVAL;
++  if (memblock_reserve(base, bytes)) return -ENOMEM;
++  pr_info("TR100 ARM64: reserved firmware %s at %lx size %lx\n", name, base, bytes);
++ }
++ return 0;
++}
++
++/* Called after the DT/kernel reservations, before paging/buddy allocation. */
++void __init gk_arm64_import_boot_params_early(void)
++{
++ const unsigned char *tags; unsigned offset = 0x100;
++ tags = early_memremap(0, SZ_4K);
++ if (!tags) panic("TR100: cannot map firmware parameters");
++ while (offset <= SZ_4K - 8) {
++  u32 words = gk_boot_le32(tags + offset), tag = gk_boot_le32(tags + offset + 4);
++  unsigned bytes;
++  if (!words || words < 2 || words > (SZ_4K - offset) / 4) break;
++  bytes = (words - 2) * 4;
++  if (tag == 0x726d6d75 && bytes) {
++   unsigned n = min_t(unsigned, bytes, sizeof(g_sdk_version) - 1);
++   memcpy(g_sdk_version, tags + offset + 8, n); g_sdk_version[n] = 0;
++  } else if (tag == 0x70000001 && bytes <= sizeof(g_params)) {
++   memcpy(g_params, tags + offset + 8, bytes); g_params_len = bytes;
++  } else if (tag == 0x48694e7b && words >= 5) {
++   u32 phase = gk_boot_le32(tags + offset + 12) & 0xff;
++   if (!gk_boot_le32(tags + offset + 8) && phase <= 7) {
++    g_emmc_boot_tuning_phase = phase;
++    g_emmc_boot_dll_element = gk_boot_le32(tags + offset + 16) & 0xff;
++    g_emmc_boot_params_valid = true;
++   }
++  }
++  offset += words * 4;
++ }
++ early_memunmap((void *)tags, SZ_4K);
++ if (!g_emmc_boot_params_valid) panic("TR100: valid eMMC boot tuning missing");
++ {
++  const unsigned char *unused; unsigned unused_size;
++  if (!g_params_len || gk_boot_param_find(g_params, g_params_len, "pdm_tag", &unused, &unused_size) != 1)
++   panic("TR100: malformed or missing display boot parameters");
++ }
++ if (gk_arm64_reserve_pdm("pdm_tag") || gk_arm64_reserve_pdm("hrf_tag"))
++  panic("TR100: invalid or overlapping firmware display buffers");
++ pr_info("GK6323 ARM64 boot tuning: phase=%u element=%u SDK=%s\n",
++  g_emmc_boot_tuning_phase, g_emmc_boot_dll_element, g_sdk_version);
++}
+--- a/drivers/goke/gk_arm64_boot_params.h
++++ b/drivers/goke/gk_arm64_boot_params.h
+@@ -0,0 +1,26 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef GK_ARM64_BOOT_PARAMS_H
++#define GK_ARM64_BOOT_PARAMS_H
++static inline unsigned gk_boot_le16(const unsigned char *p)
++{ return (unsigned)p[0] | (unsigned)p[1] << 8; }
++static inline unsigned gk_boot_le32(const unsigned char *p)
++{ return gk_boot_le16(p) | gk_boot_le16(p + 2) << 16; }
++/* Validate every item before returning a pointer into the permanent buffer. */
++static inline int gk_boot_param_find(const unsigned char *b, unsigned len,
++ const char *name, const unsigned char **data, unsigned *size)
++{
++ unsigned count, bytes, table, i; const unsigned char *match = 0; unsigned match_len = 0;
++ if (len < 12 || len > 2048) return -1;
++ count = gk_boot_le32(b + 4); bytes = gk_boot_le32(b + 8);
++ if (bytes > len - 12 || count > bytes / 12) return -1;
++ table = count * 12;
++ for (i = 0; i < count; i++) {
++  const unsigned char *item = b + 12 + i * 12;
++  unsigned off = gk_boot_le16(item + 8), n = gk_boot_le16(item + 10);
++  if (off > bytes - table || n > bytes - table - off) return -1;
++  if (!strncmp((const char *)item, name, 8)) { match = b + 12 + table + off; match_len = n; }
++ }
++ if (!match) return 0;
++ *data = match; *size = match_len; return 1;
++}
++#endif

@@ -1,0 +1,77 @@
+#!/bin/busybox sh
+BB=/bin/busybox
+$BB mount -t proc proc /proc
+$BB mount -t sysfs sysfs /sys
+$BB mount -t devtmpfs devtmpfs /dev
+exec </dev/ttyAMA0 >/dev/ttyAMA0 2>&1
+echo TR100_ARM64_RAM_PROBE_BEGIN
+$BB uname -a
+/bin/probe64
+$BB cat /proc/cpuinfo /proc/meminfo /proc/cmdline /proc/partitions
+$BB sleep 3
+$BB mkdir -p /dev/pts /dev/shm /run
+$BB mount -t devpts devpts /dev/pts
+$BB mount -t tmpfs tmpfs /run
+$BB ip link set lo up
+for disk in /dev/mmcblk0 /dev/mmcblk0p[1-8]; do
+    [ -b "$disk" ] || continue
+    $BB blockdev --setro "$disk" || exit 1
+done
+$BB cat /proc/partitions
+$BB ip link show
+valid_p8() {
+    [ "$($BB cat /sys/class/block/mmcblk0/size)" = 15269888 ] || return 1
+    [ "$($BB cat /sys/class/block/mmcblk0p8/start)" = 86016 ] || return 1
+    [ "$($BB cat /sys/class/block/mmcblk0p8/size)" = 15183872 ] || return 1
+    uuid=$($BB dd if=/dev/mmcblk0p8 bs=512 count=4 2>/dev/null |
+        $BB od -An -tx1 -j 1128 -N 16 | $BB tr -d ' \n')
+    [ "$uuid" = a8d4abf76ae44f9ba39aef1b79c63230 ]
+}
+valid_p8 && echo TR100_ARM64_ROOT_UUID_GEOMETRY_VERIFIED
+echo TR100_ARM64_STORAGE_READONLY
+echo TR100_ARM64_RAM_PROBE_SHELL_NO_STORAGE_MOUNTED
+
+tr100_mounted() {
+    while read -r tr100_source tr100_target tr100_options; do
+        [ "$tr100_target" = "$1" ] && return 0
+    done < /proc/mounts
+    return 1
+}
+
+start_root() {
+    tag=$($BB cat /newroot/etc/tr100/image-tag 2>/dev/null)
+    [ "$tag" = tr100-arm64-bookworm-20261111 ] || return 1
+    # /sbin/init is an absolute symlink; check the staged binary before chroot.
+    [ -x /newroot/usr/lib/systemd/systemd ] || return 1
+    # Check all targets while the original /proc is still accessible.
+    for fs in dev/pts dev proc sys run; do
+        if tr100_mounted /newroot/$fs; then
+            $BB umount /newroot/$fs || return 1
+        fi
+    done
+    for fs in dev proc sys run; do
+        $BB mount --move /$fs /newroot/$fs || return 1
+    done
+    echo TR100_ARM64_SWITCHING_TO_DEBIAN
+    exec $BB switch_root /newroot /sbin/init
+}
+
+case " $($BB cat /proc/cmdline) " in
+    *" tr100.arm64.root=installed "*)
+        if valid_p8; then
+            $BB blockdev --setrw /dev/mmcblk0
+            $BB blockdev --setrw /dev/mmcblk0p8
+            $BB mkdir -p /newroot
+            if $BB mount -t ext4 /dev/mmcblk0p8 /newroot; then
+                start_root || echo TR100_ARM64_ROOT_HANDOFF_FAILED
+            fi
+        fi
+        ;;
+esac
+while :; do
+    if [ -f /run/tr100-start-staged ]; then
+        start_root || echo TR100_ARM64_STAGED_HANDOFF_FAILED
+    fi
+    $BB setsid $BB cttyhack $BB sh -i
+    $BB sleep 1
+done

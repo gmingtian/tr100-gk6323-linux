@@ -37,6 +37,16 @@ test('identity gate accepts only Linux root, fixed kernel/tag and p8 ext4', () =
     const args = [...valid]; args[i] = bad; assert.notEqual(invoke(args).status, 0);
   }
 });
+test('ARM64 console requires its exact matching image and kernel', () => {
+  const invoke = (kernel, tag) => run(`tr100_validate_identity Linux 0 '${kernel}' '${tag}' '259:0 ext4'`);
+  assert.equal(invoke('5.10.165_gk6323-tr100-arm64', 'tr100-arm64-bookworm-20261111').status, 0);
+  for (const [kernel, tag] of [
+    ['5.10.165_gk6323-tr100-arm64-probe', 'tr100-arm64-bookworm-20261111'],
+    ['5.10.165_gk6323-tr100-arm64', 'tr100-pure-linux-20261111'],
+    ['5.10.165_gk6323-tr100-docker', 'tr100-arm64-bookworm-20261111'],
+    ['3.18.24_gk6323v100c', 'tr100-arm64-bookworm-20261111'],
+  ]) assert.notEqual(invoke(kernel, tag).status, 0);
+});
 test('readback accepts the actual RGB565 geometry including fbset indentation', () => {
   const r = run(`tr100_validate_mode $'mode "1280x720"\n    geometry 1280 720 1280 2160 16\n    rgba 5/11,6/5,5/0,0/0\nendmode'`);
   assert.equal(r.status, 0, r.stderr);
