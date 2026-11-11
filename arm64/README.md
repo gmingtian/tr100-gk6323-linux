@@ -60,6 +60,6 @@ cc -Wall -Wextra -Werror arm64/temperature/test-temp-math.c -o /tmp/tr100-temp-m
 
 正式安装内核 `5.10.165_gk6323-tr100-arm64`，构建 `#22`，Debian Bookworm arm64、systemd 252.39、Docker 29.9.3 arm64。已从 eMMC 完成正常软件重启自动启动；根目录为 p8 顶层，systemd 无失败服务。原 root 访问配置、SSH 主机密钥、原厂 MAC 保持，网卡 DHCP；时区 Asia/Shanghai、NTP 同步、腾讯 APT 源。
 
-原生 Docker 容器运行及桥接 DNS、真实 ARMHF 动态程序、旧 time32 原始系统调用及 libc 计时、TUN、legacy/nft 双路径 IPv4/IPv6 TPROXY 实际收发均通过。HDMI 帧缓冲抓图可见登录文字，四个后台线程为 I，温度约 54–56°C。USB EHCI/OHCI/HID/evdev 已启用、控制器可见，但本次 ARM64 验收时未连接物理键盘，未把旧 ARM32 阶段的人工键盘确认当作新系统确认。尚未实测物理断电冷启动。
+原生 Docker 容器运行及桥接 DNS、真实 ARMHF 动态程序、旧 time32 原始系统调用及 libc 计时、TUN、legacy/nft 双路径 IPv4/IPv6 TPROXY 实际收发均通过。HDMI 帧缓冲抓图可见登录文字，四个后台线程为 I，温度约 54–56°C。USB EHCI/OHCI/HID/evdev 已启用、控制器可见，但本次 ARM64 验收时未枚举到物理键盘，未把旧 ARM32 阶段的人工键盘确认当作新系统确认。尚未实测物理断电冷启动。
 
 最终完整 p3（12 MiB）SHA256 为 `7158a349d4eda9d32929bc6fe866b672ae8ec039edbe8a342bea0d5039f6b3e6`；启动时前 10 MiB CRC32 为 `eb3eec9a`，DTB 为 `de83786b`，ATF 为 `96266b1b`。完整读回通过。p2 只有 bootcmd 值改变，环境 CRC 正确且 64 KiB 环境外字节不变；原 loader/ATF 哈希不变。
