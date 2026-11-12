@@ -1,0 +1,15 @@
+[Unit]
+Description=TR100 onboard SDIO Wi-Fi driver
+Wants=systemd-udev-settle.service
+After=systemd-udev-settle.service tr100-display-modules.service
+ConditionKernelVersion=5.10.165_gk6323-tr100-arm64-kvm
+ConditionPathExists=/sys/firmware/devicetree/base/soc/gkmciv200.SD@f9c40000/mmc-pwrseq
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/tr100-onboard-wifi
+RemainAfterExit=yes
+TimeoutStartSec=45
+
+[Install]
+WantedBy=multi-user.target

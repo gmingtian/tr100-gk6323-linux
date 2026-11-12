@@ -1,0 +1,553 @@
+{
+  "files": [
+    {
+      "bytes": 72812,
+      "licence": "LICENCE.open-ath9k-htc-firmware",
+      "path": "usr/lib/firmware/ath9k_htc/htc_7010-1.4.0.fw",
+      "resource": "ath9k_htc/htc_7010-1.4.0.fw",
+      "sha256": "737850aaf66ca13f82e0f5ca5e758f606f840c2f23c291350ab916bbf88e6f75"
+    },
+    {
+      "bytes": 51008,
+      "licence": "LICENCE.open-ath9k-htc-firmware",
+      "path": "usr/lib/firmware/ath9k_htc/htc_9271-1.4.0.fw",
+      "resource": "ath9k_htc/htc_9271-1.4.0.fw",
+      "sha256": "78f7d592a95b419a02fde7440f30c606fc31a871cf0ce150ced40d4857173eb0"
+    },
+    {
+      "path": "usr/lib/firmware/carl9170-1.fw",
+      "resource": "carl9170-1.fw",
+      "bytes": 13388,
+      "sha256": "e1695dbfbc6aa7bb3182615bd47905e2df808317e4050878e50bb24285b37068",
+      "licence": "GPL-2"
+    },
+    {
+      "bytes": 80680,
+      "licence": "LICENCE.mediatek",
+      "path": "usr/lib/firmware/mediatek/mt7610e.bin",
+      "resource": "mediatek/mt7610e.bin",
+      "sha256": "538d08c08f8fb5aa05cacf34e49aeb307e8b2dc094407fc655fbf3580c893953"
+    },
+    {
+      "bytes": 80288,
+      "licence": "LICENCE.mediatek",
+      "path": "usr/lib/firmware/mediatek/mt7610u.bin",
+      "resource": "mediatek/mt7610u.bin",
+      "sha256": "5a4268e9021bb587426ba624b425f1e660bfc82cd63b36ad3ce6fb9ce6751760"
+    },
+    {
+      "bytes": 45412,
+      "licence": "LICENCE.ralink_a_mediatek_company_firmware",
+      "path": "usr/lib/firmware/mt7601u.bin",
+      "resource": "mediatek/mt7601u.bin",
+      "sha256": "4511b1d840e22aea2bf5fdca419c91c0d94cbfb291b9ac4f8be6d9100d1a7046"
+    },
+    {
+      "bytes": 81908,
+      "licence": "LICENCE.ralink_a_mediatek_company_firmware",
+      "path": "usr/lib/firmware/mt7662.bin",
+      "resource": "mediatek/mt7662.bin",
+      "sha256": "f7e52492f58088cae50e51a54cca68e4abc5b74f7d0b6b731dbb4c04465a94b6"
+    },
+    {
+      "bytes": 26350,
+      "licence": "LICENCE.ralink_a_mediatek_company_firmware",
+      "path": "usr/lib/firmware/mt7662_rom_patch.bin",
+      "resource": "mediatek/mt7662_rom_patch.bin",
+      "sha256": "6f0e871268f6e4d99196d90d89bcc09fe493d010366260a2cfcaa5dd66095f8c"
+    },
+    {
+      "bytes": 5980,
+      "licence": "wireless-regdb-LICENSE",
+      "member": "wireless-regdb-2024.10.07/regulatory.db",
+      "path": "usr/lib/firmware/regulatory.db",
+      "resource": "wireless-regdb",
+      "sha256": "92eec693a0a9ec460be6bb3ff9e22b259b2f906eddd2984dd90654b5ecfa0f18"
+    },
+    {
+      "bytes": 1085,
+      "licence": "wireless-regdb-LICENSE",
+      "member": "wireless-regdb-2024.10.07/regulatory.db.p7s",
+      "path": "usr/lib/firmware/regulatory.db.p7s",
+      "resource": "wireless-regdb",
+      "sha256": "4242d15defb0608b917a2c3cd0dbea21c026a4acc905093e8947dd494c2e26b1"
+    },
+    {
+      "bytes": 8192,
+      "licence": "LICENCE.ralink-firmware.txt",
+      "path": "usr/lib/firmware/rt2870.bin",
+      "resource": "rt2870.bin",
+      "sha256": "251b8918391eac6415d60dca239e415aad0177e885376f2a17782e64fcbbe317"
+    },
+    {
+      "path": "usr/lib/firmware/rt73.bin",
+      "resource": "rt73.bin",
+      "bytes": 2048,
+      "sha256": "a57745fa55b7700ff410bc69f3630c889e46d771ac17f6c48bda1c02908116bc",
+      "licence": "LICENCE.ralink-firmware.txt"
+    },
+    {
+      "bytes": 1768,
+      "licence": "LICENCE.rtlwifi_firmware.txt",
+      "path": "usr/lib/firmware/rtl_nic/rtl8153a-2.fw",
+      "resource": "rtl_nic/rtl8153a-2.fw",
+      "sha256": "7d4f422ec0e8141576c1b486fe6b7c6ce8ec9ea1f650815fd4058878c038366d"
+    },
+    {
+      "bytes": 1440,
+      "licence": "LICENCE.rtlwifi_firmware.txt",
+      "path": "usr/lib/firmware/rtl_nic/rtl8153a-3.fw",
+      "resource": "rtl_nic/rtl8153a-3.fw",
+      "sha256": "c7099a1b0fc80e02ff7276aacbb08b5771e2f5c763fb76a7a8df3a89d58d8208"
+    },
+    {
+      "bytes": 712,
+      "licence": "LICENCE.rtlwifi_firmware.txt",
+      "path": "usr/lib/firmware/rtl_nic/rtl8153a-4.fw",
+      "resource": "rtl_nic/rtl8153a-4.fw",
+      "sha256": "9cdafb4b6caa944c35b6ccb0ab7563ff377a36f38720b5b1eb35d90ecd756cd5"
+    },
+    {
+      "bytes": 1880,
+      "licence": "LICENCE.rtlwifi_firmware.txt",
+      "path": "usr/lib/firmware/rtl_nic/rtl8153b-2.fw",
+      "resource": "rtl_nic/rtl8153b-2.fw",
+      "sha256": "137c9c752e8648ecfcf3b74ffc7d675c098145c222e2969721e6257af31716bc"
+    },
+    {
+      "bytes": 15262,
+      "licence": "LICENCE.rtlwifi_firmware.txt",
+      "path": "usr/lib/firmware/rtlwifi/rtl8188eufw.bin",
+      "resource": "rtlwifi/rtl8188eufw.bin",
+      "sha256": "2ff74315287529dec2e50eb57d6e0c97d2116f28ae166773ccdf93b6360000c4"
+    },
+    {
+      "bytes": 16126,
+      "licence": "LICENCE.rtlwifi_firmware.txt",
+      "path": "usr/lib/firmware/rtlwifi/rtl8192cufw_A.bin",
+      "resource": "rtlwifi/rtl8192cufw_A.bin",
+      "sha256": "32846065b017c8b1d2d448e8c0ea2f5e741424809be49f2c6a6261339cd0b0cf"
+    },
+    {
+      "bytes": 16096,
+      "licence": "LICENCE.rtlwifi_firmware.txt",
+      "path": "usr/lib/firmware/rtlwifi/rtl8192cufw_B.bin",
+      "resource": "rtlwifi/rtl8192cufw_B.bin",
+      "sha256": "479e5e6732b0e07cfcab4cc190b8c30465c0b7f8c0ed22d742bedd4412cbcf2a"
+    },
+    {
+      "bytes": 16126,
+      "licence": "LICENCE.rtlwifi_firmware.txt",
+      "path": "usr/lib/firmware/rtlwifi/rtl8192cufw_TMSC.bin",
+      "resource": "rtlwifi/rtl8192cufw_TMSC.bin",
+      "sha256": "c083f2db36ef33d0ffffc979aba1d40f55fa9dc38dce50f26e0108a21c080286"
+    },
+    {
+      "bytes": 32286,
+      "licence": "LICENCE.rtlwifi_firmware.txt",
+      "path": "usr/lib/firmware/rtlwifi/rtl8192eu_nic.bin",
+      "resource": "rtlwifi/rtl8192eu_nic.bin",
+      "sha256": "b15bc955fba2fc3abc093affe62c9f7284a0b84d4f13f8ce55366488dc9aad8b"
+    },
+    {
+      "bytes": 122328,
+      "licence": "LICENCE.rtlwifi_firmware.txt",
+      "path": "usr/lib/firmware/rtlwifi/rtl8712u.bin",
+      "resource": "rtlwifi/rtl8712u.bin",
+      "sha256": "6e84ec69c300b0182c9bc8fa41e88281eeb04013c4a34c341748052c3c6a9d3d"
+    },
+    {
+      "bytes": 22172,
+      "licence": "LICENCE.rtlwifi_firmware.txt",
+      "path": "usr/lib/firmware/rtlwifi/rtl8723aufw_A.bin",
+      "resource": "rtlwifi/rtl8723aufw_A.bin",
+      "sha256": "d63e39f41dd726b3a833e64fea44696c7b74ad595d31dcaae509b17d247f125c"
+    },
+    {
+      "bytes": 24118,
+      "licence": "LICENCE.rtlwifi_firmware.txt",
+      "path": "usr/lib/firmware/rtlwifi/rtl8723aufw_B.bin",
+      "resource": "rtlwifi/rtl8723aufw_B.bin",
+      "sha256": "850374b96076ab4b854ee9dc42ef57f9bd6b24493b74ba6b609c690d17f1c552"
+    },
+    {
+      "bytes": 19200,
+      "licence": "LICENCE.rtlwifi_firmware.txt",
+      "path": "usr/lib/firmware/rtlwifi/rtl8723aufw_B_NoBT.bin",
+      "resource": "rtlwifi/rtl8723aufw_B_NoBT.bin",
+      "sha256": "a24af5491dbfa3937633049fc66576ed478dec60e7676263f00a2ce9dd22c25b"
+    },
+    {
+      "bytes": 32108,
+      "licence": "LICENCE.rtlwifi_firmware.txt",
+      "path": "usr/lib/firmware/rtlwifi/rtl8723bu_nic.bin",
+      "resource": "rtlwifi/rtl8723bu_nic.bin",
+      "sha256": "a52b5a7be4841b4b2839eddf5122b3300a3610866abe4bb3c3c9e444c8ab7969"
+    },
+    {
+      "path": "usr/lib/firmware/zd1211/zd1211_ub",
+      "resource": "zd1211-firmware",
+      "member": "zd1211-firmware-3.0.0.56/zd1211_ub",
+      "bytes": 4018,
+      "sha256": "283b2d22a1952cb92ad91b00fc992ef5698ba4a6bdd29040c49385fb14f8e3d7",
+      "licence": "zd1211-COPYING"
+    },
+    {
+      "path": "usr/lib/firmware/zd1211/zd1211_uph",
+      "resource": "zd1211-firmware",
+      "member": "zd1211-firmware-3.0.0.56/zd1211_uph",
+      "bytes": 5120,
+      "sha256": "886c9812be295f87eb6151abea732bea5d0214cffbde8a66ed76fa1b91dbf158",
+      "licence": "zd1211-COPYING"
+    },
+    {
+      "path": "usr/lib/firmware/zd1211/zd1211_uphm",
+      "resource": "zd1211-firmware",
+      "member": "zd1211-firmware-3.0.0.56/zd1211_uphm",
+      "bytes": 5120,
+      "sha256": "68a072484e72e2f01f35ea2fabcd6e37df45e7249c0d21b031b27912ee0b247a",
+      "licence": "zd1211-COPYING"
+    },
+    {
+      "path": "usr/lib/firmware/zd1211/zd1211_uphr",
+      "resource": "zd1211-firmware",
+      "member": "zd1211-firmware-3.0.0.56/zd1211_uphr",
+      "bytes": 5120,
+      "sha256": "1fce695719db781e6df983111309284703f96c73896cf092a4b1edbee1611fe5",
+      "licence": "zd1211-COPYING"
+    },
+    {
+      "path": "usr/lib/firmware/zd1211/zd1211_ur",
+      "resource": "zd1211-firmware",
+      "member": "zd1211-firmware-3.0.0.56/zd1211_ur",
+      "bytes": 3584,
+      "sha256": "7bd68cb61b503e4c2ce00dedac509c649e8deb5bf47640becef7c0eed6646633",
+      "licence": "zd1211-COPYING"
+    },
+    {
+      "path": "usr/lib/firmware/zd1211/zd1211b_ub",
+      "resource": "zd1211-firmware",
+      "member": "zd1211-firmware-3.0.0.56/zd1211b_ub",
+      "bytes": 4018,
+      "sha256": "a4e2bda754923da656881db7498f2e4846cf44b3699a788a373357e049efbbbf",
+      "licence": "zd1211-COPYING"
+    },
+    {
+      "path": "usr/lib/firmware/zd1211/zd1211b_uph",
+      "resource": "zd1211-firmware",
+      "member": "zd1211-firmware-3.0.0.56/zd1211b_uph",
+      "bytes": 5120,
+      "sha256": "886c9812be295f87eb6151abea732bea5d0214cffbde8a66ed76fa1b91dbf158",
+      "licence": "zd1211-COPYING"
+    },
+    {
+      "path": "usr/lib/firmware/zd1211/zd1211b_uphm",
+      "resource": "zd1211-firmware",
+      "member": "zd1211-firmware-3.0.0.56/zd1211b_uphm",
+      "bytes": 5120,
+      "sha256": "c84eb4a1bf8e6cef63344c3cdf8c65b647f80631cd5ce25b3949c9d13d1fe10c",
+      "licence": "zd1211-COPYING"
+    },
+    {
+      "path": "usr/lib/firmware/zd1211/zd1211b_uphr",
+      "resource": "zd1211-firmware",
+      "member": "zd1211-firmware-3.0.0.56/zd1211b_uphr",
+      "bytes": 5120,
+      "sha256": "c2589e2d761a72a88fda208a255bc9eeb6fab35b9f9127165cfb3290b9ede104",
+      "licence": "zd1211-COPYING"
+    },
+    {
+      "path": "usr/lib/firmware/zd1211/zd1211b_ur",
+      "resource": "zd1211-firmware",
+      "member": "zd1211-firmware-3.0.0.56/zd1211b_ur",
+      "bytes": 3584,
+      "sha256": "7bd68cb61b503e4c2ce00dedac509c649e8deb5bf47640becef7c0eed6646633",
+      "licence": "zd1211-COPYING"
+    },
+    {
+      "path": "usr/share/licenses/tr100-usb-firmware/GPL-2",
+      "resource": "GPL-2",
+      "bytes": 18092,
+      "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643"
+    },
+    {
+      "bytes": 561,
+      "path": "usr/share/licenses/tr100-usb-firmware/LICENCE.mediatek",
+      "resource": "LICENCE.mediatek",
+      "sha256": "a90d3f66704d85889945fec5525ea77622549da83aced1aac99828383f8f1805"
+    },
+    {
+      "bytes": 9409,
+      "path": "usr/share/licenses/tr100-usb-firmware/LICENCE.open-ath9k-htc-firmware",
+      "resource": "LICENCE.open-ath9k-htc-firmware",
+      "sha256": "83870e84c54aa76be973a78387b342c80ef0908b8cb82edde6d54c511b18c16c"
+    },
+    {
+      "bytes": 2103,
+      "path": "usr/share/licenses/tr100-usb-firmware/LICENCE.ralink-firmware.txt",
+      "resource": "LICENCE.ralink-firmware.txt",
+      "sha256": "d7bec70668ddd4aae8fb4aa32870e54b49fcdb0b9b007aa9f54b53a1ac7461bd"
+    },
+    {
+      "bytes": 2100,
+      "path": "usr/share/licenses/tr100-usb-firmware/LICENCE.ralink_a_mediatek_company_firmware",
+      "resource": "LICENCE.ralink_a_mediatek_company_firmware",
+      "sha256": "8568352b57f3574f9d5b2753cdb7c6e5eb2b79e82fbb9c9ba6566947467ef508"
+    },
+    {
+      "bytes": 2115,
+      "path": "usr/share/licenses/tr100-usb-firmware/LICENCE.rtlwifi_firmware.txt",
+      "resource": "LICENCE.rtlwifi_firmware.txt",
+      "sha256": "a61351665b4f264f6c631364f85b907d8f8f41f8b369533ef4021765f9f3b62e"
+    },
+    {
+      "bytes": 291838,
+      "path": "usr/share/licenses/tr100-usb-firmware/WHENCE",
+      "resource": "WHENCE",
+      "sha256": "7851ae8e04d71ccfc741fd2df450ef5724c4a172a0a282f69e8a8ce44877ba84"
+    },
+    {
+      "bytes": 880,
+      "licence": "wireless-regdb-LICENSE",
+      "member": "wireless-regdb-2024.10.07/LICENSE",
+      "path": "usr/share/licenses/tr100-usb-firmware/wireless-regdb-LICENSE",
+      "resource": "wireless-regdb",
+      "sha256": "678b0df753c86198fc496d1f1033429bbd57f101472132ee7eaaf9f5e0a7fae1"
+    },
+    {
+      "path": "usr/share/licenses/tr100-usb-firmware/zd1211-COPYING",
+      "resource": "zd1211-firmware",
+      "member": "zd1211-firmware-3.0.0.56/COPYING",
+      "bytes": 18011,
+      "sha256": "e6d6a009505e345fe949e1310334fcb0747f28dae2856759de102ab66b722cb4"
+    }
+  ],
+  "format_version": 1,
+  "linux_firmware": {
+    "commit": "22a6c7dcc1d90b6026c56e168aad2d812e3bf54b",
+    "repository": "https://gitlab.com/kernel-firmware/linux-firmware.git",
+    "tag": "20241017"
+  },
+  "omissions": [
+    {
+      "path": "rtlwifi/rtl8723bu_bt.bin",
+      "reason": "Absent from official pinned linux-firmware; dormant enable_bluetooth branch is never assigned in actual vendor5.10 rtl8xxxu. Wi-Fi uses rtl8723bu_nic.bin; no substitute supplied."
+    }
+  ],
+  "regdb": {
+    "kernel_trust_sources": [
+      {
+        "certificate_sha256": "cad3ddc5f274b8213c9956e2611a415252fd3619ca6700dc8ed396ed23acf6b0",
+        "path": "net/wireless/certs/sforshee.hex",
+        "source_sha256": "ca3dd4d10995168507e0b7b44621917c7e1e77e73e882f85afa92df86daae77a"
+      },
+      {
+        "certificate_sha256": "eeb049594eb3a83e50bfb6782e7fdf9e96fbd5c2954a0bbb0931cd55321d0bcf",
+        "path": "net/wireless/certs/wens.hex",
+        "source_sha256": "6485f5ddecbecbf73113dc669fe23da07f1a5ab60fb1ad932b0062f9d7fe8753"
+      }
+    ],
+    "release": "2024.10.07",
+    "trusted_certificate_file": "verification/trusted-regdb.pem",
+    "trusted_certificate_sha256": "a6a84c88b61d65e275549627c36d52d6ff78f57466ec1dd3ec8d6319cbaf8d2e"
+  },
+  "resources": {
+    "LICENCE.mediatek": {
+      "bytes": 561,
+      "sha256": "a90d3f66704d85889945fec5525ea77622549da83aced1aac99828383f8f1805",
+      "upstream_path": "LICENCE.mediatek",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/LICENCE.mediatek/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "LICENCE.open-ath9k-htc-firmware": {
+      "bytes": 9409,
+      "sha256": "83870e84c54aa76be973a78387b342c80ef0908b8cb82edde6d54c511b18c16c",
+      "upstream_path": "LICENCE.open-ath9k-htc-firmware",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/LICENCE.open-ath9k-htc-firmware/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "LICENCE.ralink-firmware.txt": {
+      "bytes": 2103,
+      "sha256": "d7bec70668ddd4aae8fb4aa32870e54b49fcdb0b9b007aa9f54b53a1ac7461bd",
+      "upstream_path": "LICENCE.ralink-firmware.txt",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/LICENCE.ralink-firmware.txt/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "LICENCE.ralink_a_mediatek_company_firmware": {
+      "bytes": 2100,
+      "sha256": "8568352b57f3574f9d5b2753cdb7c6e5eb2b79e82fbb9c9ba6566947467ef508",
+      "upstream_path": "LICENCE.ralink_a_mediatek_company_firmware",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/LICENCE.ralink_a_mediatek_company_firmware/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "LICENCE.rtlwifi_firmware.txt": {
+      "bytes": 2115,
+      "sha256": "a61351665b4f264f6c631364f85b907d8f8f41f8b369533ef4021765f9f3b62e",
+      "upstream_path": "LICENCE.rtlwifi_firmware.txt",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/LICENCE.rtlwifi_firmware.txt/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "WHENCE": {
+      "bytes": 291838,
+      "sha256": "7851ae8e04d71ccfc741fd2df450ef5724c4a172a0a282f69e8a8ce44877ba84",
+      "upstream_path": "WHENCE",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/WHENCE/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "ath9k_htc/htc_7010-1.4.0.fw": {
+      "bytes": 72812,
+      "sha256": "737850aaf66ca13f82e0f5ca5e758f606f840c2f23c291350ab916bbf88e6f75",
+      "upstream_path": "ath9k_htc/htc_7010-1.4.0.fw",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/ath9k_htc%2Fhtc_7010-1.4.0.fw/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "ath9k_htc/htc_9271-1.4.0.fw": {
+      "bytes": 51008,
+      "sha256": "78f7d592a95b419a02fde7440f30c606fc31a871cf0ce150ced40d4857173eb0",
+      "upstream_path": "ath9k_htc/htc_9271-1.4.0.fw",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/ath9k_htc%2Fhtc_9271-1.4.0.fw/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "mediatek/mt7601u.bin": {
+      "bytes": 45412,
+      "sha256": "4511b1d840e22aea2bf5fdca419c91c0d94cbfb291b9ac4f8be6d9100d1a7046",
+      "upstream_path": "mediatek/mt7601u.bin",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/mediatek%2Fmt7601u.bin/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "mediatek/mt7610e.bin": {
+      "bytes": 80680,
+      "sha256": "538d08c08f8fb5aa05cacf34e49aeb307e8b2dc094407fc655fbf3580c893953",
+      "upstream_path": "mediatek/mt7610e.bin",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/mediatek%2Fmt7610e.bin/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "mediatek/mt7610u.bin": {
+      "bytes": 80288,
+      "sha256": "5a4268e9021bb587426ba624b425f1e660bfc82cd63b36ad3ce6fb9ce6751760",
+      "upstream_path": "mediatek/mt7610u.bin",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/mediatek%2Fmt7610u.bin/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "mediatek/mt7662.bin": {
+      "bytes": 81908,
+      "sha256": "f7e52492f58088cae50e51a54cca68e4abc5b74f7d0b6b731dbb4c04465a94b6",
+      "upstream_path": "mediatek/mt7662.bin",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/mediatek%2Fmt7662.bin/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "mediatek/mt7662_rom_patch.bin": {
+      "bytes": 26350,
+      "sha256": "6f0e871268f6e4d99196d90d89bcc09fe493d010366260a2cfcaa5dd66095f8c",
+      "upstream_path": "mediatek/mt7662_rom_patch.bin",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/mediatek%2Fmt7662_rom_patch.bin/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "rt2870.bin": {
+      "bytes": 8192,
+      "sha256": "251b8918391eac6415d60dca239e415aad0177e885376f2a17782e64fcbbe317",
+      "upstream_path": "rt2870.bin",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/rt2870.bin/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "rtl_nic/rtl8153a-2.fw": {
+      "bytes": 1768,
+      "sha256": "7d4f422ec0e8141576c1b486fe6b7c6ce8ec9ea1f650815fd4058878c038366d",
+      "upstream_path": "rtl_nic/rtl8153a-2.fw",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/rtl_nic%2Frtl8153a-2.fw/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "rtl_nic/rtl8153a-3.fw": {
+      "bytes": 1440,
+      "sha256": "c7099a1b0fc80e02ff7276aacbb08b5771e2f5c763fb76a7a8df3a89d58d8208",
+      "upstream_path": "rtl_nic/rtl8153a-3.fw",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/rtl_nic%2Frtl8153a-3.fw/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "rtl_nic/rtl8153a-4.fw": {
+      "bytes": 712,
+      "sha256": "9cdafb4b6caa944c35b6ccb0ab7563ff377a36f38720b5b1eb35d90ecd756cd5",
+      "upstream_path": "rtl_nic/rtl8153a-4.fw",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/rtl_nic%2Frtl8153a-4.fw/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "rtl_nic/rtl8153b-2.fw": {
+      "bytes": 1880,
+      "sha256": "137c9c752e8648ecfcf3b74ffc7d675c098145c222e2969721e6257af31716bc",
+      "upstream_path": "rtl_nic/rtl8153b-2.fw",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/rtl_nic%2Frtl8153b-2.fw/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "rtlwifi/rtl8188eufw.bin": {
+      "bytes": 15262,
+      "sha256": "2ff74315287529dec2e50eb57d6e0c97d2116f28ae166773ccdf93b6360000c4",
+      "upstream_path": "rtlwifi/rtl8188eufw.bin",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/rtlwifi%2Frtl8188eufw.bin/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "rtlwifi/rtl8192cufw_A.bin": {
+      "bytes": 16126,
+      "sha256": "32846065b017c8b1d2d448e8c0ea2f5e741424809be49f2c6a6261339cd0b0cf",
+      "upstream_path": "rtlwifi/rtl8192cufw_A.bin",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/rtlwifi%2Frtl8192cufw_A.bin/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "rtlwifi/rtl8192cufw_B.bin": {
+      "bytes": 16096,
+      "sha256": "479e5e6732b0e07cfcab4cc190b8c30465c0b7f8c0ed22d742bedd4412cbcf2a",
+      "upstream_path": "rtlwifi/rtl8192cufw_B.bin",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/rtlwifi%2Frtl8192cufw_B.bin/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "rtlwifi/rtl8192cufw_TMSC.bin": {
+      "bytes": 16126,
+      "sha256": "c083f2db36ef33d0ffffc979aba1d40f55fa9dc38dce50f26e0108a21c080286",
+      "upstream_path": "rtlwifi/rtl8192cufw_TMSC.bin",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/rtlwifi%2Frtl8192cufw_TMSC.bin/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "rtlwifi/rtl8192eu_nic.bin": {
+      "bytes": 32286,
+      "sha256": "b15bc955fba2fc3abc093affe62c9f7284a0b84d4f13f8ce55366488dc9aad8b",
+      "upstream_path": "rtlwifi/rtl8192eu_nic.bin",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/rtlwifi%2Frtl8192eu_nic.bin/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "rtlwifi/rtl8712u.bin": {
+      "bytes": 122328,
+      "sha256": "6e84ec69c300b0182c9bc8fa41e88281eeb04013c4a34c341748052c3c6a9d3d",
+      "upstream_path": "rtlwifi/rtl8712u.bin",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/rtlwifi%2Frtl8712u.bin/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "rtlwifi/rtl8723aufw_A.bin": {
+      "bytes": 22172,
+      "sha256": "d63e39f41dd726b3a833e64fea44696c7b74ad595d31dcaae509b17d247f125c",
+      "upstream_path": "rtlwifi/rtl8723aufw_A.bin",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/rtlwifi%2Frtl8723aufw_A.bin/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "rtlwifi/rtl8723aufw_B.bin": {
+      "bytes": 24118,
+      "sha256": "850374b96076ab4b854ee9dc42ef57f9bd6b24493b74ba6b609c690d17f1c552",
+      "upstream_path": "rtlwifi/rtl8723aufw_B.bin",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/rtlwifi%2Frtl8723aufw_B.bin/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "rtlwifi/rtl8723aufw_B_NoBT.bin": {
+      "bytes": 19200,
+      "sha256": "a24af5491dbfa3937633049fc66576ed478dec60e7676263f00a2ce9dd22c25b",
+      "upstream_path": "rtlwifi/rtl8723aufw_B_NoBT.bin",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/rtlwifi%2Frtl8723aufw_B_NoBT.bin/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "rtlwifi/rtl8723bu_nic.bin": {
+      "bytes": 32108,
+      "sha256": "a52b5a7be4841b4b2839eddf5122b3300a3610866abe4bb3c3c9e444c8ab7969",
+      "upstream_path": "rtlwifi/rtl8723bu_nic.bin",
+      "url": "https://gitlab.com/api/v4/projects/48890189/repository/files/rtlwifi%2Frtl8723bu_nic.bin/raw?ref=22a6c7dcc1d90b6026c56e168aad2d812e3bf54b"
+    },
+    "wireless-regdb": {
+      "bytes": 30356,
+      "sha256": "f76f2bd79a653e9f9dd50548d99d03a4a4eb157da056dfd5892f403ec28fb3d5",
+      "url": "https://www.kernel.org/pub/software/network/wireless-regdb/wireless-regdb-2024.10.07.tar.xz"
+    },
+    "rt73.bin": {
+      "url": "https://kernel.googlesource.com/pub/scm/linux/kernel/git/firmware/linux-firmware/+/22a6c7dcc1d90b6026c56e168aad2d812e3bf54b/rt73.bin?format=TEXT",
+      "upstream_path": "rt73.bin",
+      "bytes": 2048,
+      "sha256": "a57745fa55b7700ff410bc69f3630c889e46d771ac17f6c48bda1c02908116bc"
+    },
+    "carl9170-1.fw": {
+      "url": "https://kernel.googlesource.com/pub/scm/linux/kernel/git/firmware/linux-firmware/+/22a6c7dcc1d90b6026c56e168aad2d812e3bf54b/carl9170-1.fw?format=TEXT",
+      "upstream_path": "carl9170-1.fw",
+      "bytes": 13388,
+      "sha256": "e1695dbfbc6aa7bb3182615bd47905e2df808317e4050878e50bb24285b37068"
+    },
+    "GPL-2": {
+      "url": "https://kernel.googlesource.com/pub/scm/linux/kernel/git/firmware/linux-firmware/+/22a6c7dcc1d90b6026c56e168aad2d812e3bf54b/GPL-2?format=TEXT",
+      "upstream_path": "GPL-2",
+      "bytes": 18092,
+      "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643"
+    },
+    "zd1211-firmware": {
+      "url": "https://deb.debian.org/debian/pool/non-free-firmware/z/zd1211-firmware/zd1211-firmware_1.5.orig.tar.gz",
+      "bytes": 47511,
+      "sha256": "2c78a9e9384a96582bd6450088b59251e8bd90cb71668257c05eb502b6f92dab"
+    }
+  },
+  "source_date_epoch": 1729123200
+}

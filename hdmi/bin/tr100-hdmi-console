@@ -6,7 +6,7 @@ tr100_validate_identity() {
     [[ "$1" == Linux ]] || { tr100_refuse 'Linux required'; return 1; }
     [[ "$2" == 0 ]] || { tr100_refuse 'root required'; return 1; }
     case "$3:$4" in
-        3.18.24_gk6323v100c:tr100-pure-linux-20261111|5.10.165_gk6323-tr100-docker:tr100-pure-linux-20261111|5.10.165_gk6323-tr100-arm64:tr100-arm64-bookworm-20261111) ;;
+        3.18.24_gk6323v100c:tr100-pure-linux-20261111|5.10.165_gk6323-tr100-docker:tr100-pure-linux-20261111|5.10.165_gk6323-tr100-arm64:tr100-arm64-bookworm-20261111|5.10.165_gk6323-tr100-arm64-kvm:tr100-arm64-bookworm-20261111) ;;
         *) tr100_refuse 'unexpected kernel or image tag'; return 1 ;;
     esac
     [[ "$5" == '259:0 ext4' ]] || { tr100_refuse 'persistent p8 ext4 root required'; return 1; }

@@ -1,0 +1,28 @@
+#!/bin/sh
+# Load only the source-built display stack matched to this board and kernel.
+set -eu
+[ "$(id -u)" = 0 ]
+case "$(uname -r):$(cat /etc/tr100/image-tag)" in
+    5.10.165_gk6323-tr100-docker:tr100-pure-linux-20261111|5.10.165_gk6323-tr100-arm64:tr100-arm64-bookworm-20261111) ;;
+    *) exit 1 ;;
+esac
+[ "$(cat /etc/tr100/rootfs-uuid)" = a8d4abf7-6ae4-4f9b-a39a-ef1b79c63230 ]
+for display_module in gk_common gk_pdm gk_pq gk_hdmi gk_vou gk_tde gfbg; do
+    /sbin/modprobe "$display_module"
+done
+# Native udev owns device permissions; mdev -s would reset all nodes to 0660.
+/usr/bin/udevadm settle --timeout=15
+[ -c /dev/fb0 ] && [ "$(stat -c '%t:%T' /dev/fb0)" = 1d:0 ]
+# Modular Linux omits the vendor MCE display startup. Configure the video
+# path before starting TX; starting alone leaves PHY power disabled.
+# RGB/DVI carries the text console without audio or HDCP.
+[ -w /proc/msp/hdmi0 ]
+printf '%s\n' 'clrspace 0' > /proc/msp/hdmi0
+printf '%s\n' 'cmd 1' > /proc/msp/hdmi0
+# Proc commands can return success even when the internal operation fails.
+# Check actual hardware state, rather than the write's exit status alone.
+awk '
+    /PhyOutputEnable:[[:space:]]*YES/ && /PhyPowerEnable[[:space:]]*:[[:space:]]*YES/ { powered = 1 }
+    /OutColorSpace[[:space:]]*:[[:space:]]*RGB/ { rgb = 1 }
+    END { exit !(powered && rgb) }
+' /proc/msp/hdmi0

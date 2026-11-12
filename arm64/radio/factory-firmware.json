@@ -1,0 +1,13 @@
+{
+  "provenance": "Extracted from TR100 original ROM; no verified public redistribution source or license. Supply locally; not committed.",
+  "files": {
+    "wcnmodem.bin": {
+      "sha256": "07157b90122c80b87ac72a72fd385dc4887392502cce8a82a5c0925d179c66b6",
+      "bytes": 837120
+    },
+    "wifi_56630001_3ant.ini": {
+      "sha256": "62c8e3322573c07f0127e5bce00af202997d7c68e147ddd281195ecb9e9d4eb0",
+      "bytes": 6898
+    }
+  }
+}

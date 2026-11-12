@@ -1,0 +1,11 @@
+--- a/drivers/goke/Makefile
++++ b/drivers/goke/Makefile
+@@ -1,7 +1,7 @@
+ 
+ obj-y += kapi/ misc/ soc/ clk/ atags/ flash_stats/ ir/
+ 
+-#obj-y += securec/
++obj-y += securec/
+ obj-$(CONFIG_BLK_DEV_RAM)		+= initmrd/
+ obj-$(CONFIG_BLK_DEV_LOOP)		+= initfile/
+ obj-$(CONFIG_VIRTUAL_INPUT)		+= vinput/

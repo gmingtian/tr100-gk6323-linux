@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "kernel": {
+    "url": "https://gitcode.com/openharmony/kernel_linux_5.10.git",
+    "commit": "42aae9173d8375a01e4e7d59791cd87d9b43a5c0"
+  },
+  "vendor": {
+    "url": "https://gitcode.com/OpenHarmony-ChipBoards/vendor_goke_gk6320.git",
+    "commit": "bc36efa42ea3bd632b4e24f4a4542c949d5e5da3",
+    "paths": [
+      "linux/linux-5.10/00000_kernel_linux-5.10.patch",
+      "linux/patches"
+    ],
+    "subdir": "patch/kernel"
+  },
+  "sdk": {
+    "url": "https://gitcode.com/OpenHarmony-ChipBoards/device_soc_goke_gk6320.git",
+    "commit": "92f042bc66c836c4d3b840652c9050431a8e4e98",
+    "subdir": "sdk_gk6320",
+    "paths": [
+      "base.mak",
+      "cfg.mak",
+      "gk_rules.mak",
+      "version.mak",
+      "source/common",
+      "source/msp",
+      "source/component/Makefile",
+      "source/component/hal"
+    ]
+  },
+  "checksums": {
+    "platform/linux-5.10/gk6323_patch/kernel.patch": "c30b200c997273d102a56f139010d4b99af967d1cbf0e51e808fdb9af37d6971",
+    "vendor/linux/linux-5.10/00000_kernel_linux-5.10.patch": "72a65859aec850fc5d0df8bc153bad7a5ccd9d184b785933ff9547a7f80c123b"
+  },
+  "onboard": {
+    "url": "https://github.com/CoreELEC/uwe5631-aml.git",
+    "commit": "08165b5d56f46b569ee6461d7082ff795efafb2e",
+    "license": "GPL-2.0 (per module source headers; upstream has no top-level LICENSE)"
+  },
+  "usb_wifi": [
+    {
+      "name": "rtl8851bu",
+      "url": "https://github.com/fofajardo/rtl8851bu",
+      "commit": "9e37e7a1101316a05d5daede91549ea779b64539",
+      "commit_time": "2026-09-07T00:31:58+08:00",
+      "license": "GPL-2.0",
+      "license_source": "LICENSE",
+      "driver_version": "v1.19.10-78-gfbe3fba11.20240422",
+      "license_sha256": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
+      "module": "8851bu"
+    },
+    {
+      "name": "8821cu-20210916",
+      "url": "https://github.com/morrownr/8821cu-20210916",
+      "commit": "bda65aac150d2cde0df9603206eec23a6f3b77c4",
+      "commit_time": "2026-08-21T12:07:47-05:00",
+      "license": "GPL-2.0-only",
+      "license_source": "LICENSE",
+      "driver_version": "v5.12.0.4-1-g9241a6516.20210916_COEX20200730-5151",
+      "license_sha256": "22cdb0a9cf492dbf05c5b27381a5c0e73ae0d4622427b522b0ba92b7495e5fb0",
+      "module": "8821cu"
+    },
+    {
+      "name": "88x2bu-20210702",
+      "url": "https://github.com/morrownr/88x2bu-20210702",
+      "commit": "418d71cc00cd18b4a671f8c49ecce9b19cbfd3c9",
+      "commit_time": "2026-10-25T10:06:40-07:00",
+      "license": "GPL-2.0-only",
+      "license_source": "LICENSE",
+      "driver_version": "v5.13.1-20-gbd7c7eb9d.20210702_COEX20210316-18317b7b",
+      "license_sha256": "22cdb0a9cf492dbf05c5b27381a5c0e73ae0d4622427b522b0ba92b7495e5fb0",
+      "module": "88x2bu"
+    },
+    {
+      "name": "rtl8812au",
+      "url": "https://github.com/aircrack-ng/rtl8812au",
+      "commit": "734485506a30d6237c2deaad666a19f8ca5379f2",
+      "commit_time": "2026-03-17T18:07:20+01:00",
+      "license": "GPL-2.0",
+      "license_source": "LICENSE",
+      "driver_version": "v5.6.4.2_35491.20191025",
+      "license_sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+      "module": "88XXau"
+    }
+  ]
+}

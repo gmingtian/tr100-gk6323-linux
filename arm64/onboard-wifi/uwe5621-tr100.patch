@@ -1,0 +1,193 @@
+diff --git a/BSP/Makefile b/BSP/Makefile
+index 151e57a..e9fe8f9 100755
+--- a/BSP/Makefile
++++ b/BSP/Makefile
+@@ -232,7 +232,11 @@ ccflags-y += -I$(KERNEL_SRC)/$(M)/include/rf/
+ ### ---------- Goke start ---------- ###
+ ifeq ($(CFG_GK_WIFI_DEVICE_UWE5621),y)
+ #### add cflag ######
++ifeq ($(TR100_NATIVE_SDIO),y)
++ccflags-y += -DCONFIG_TR100_BOARD
++else
+ ccflags-y += -DCONFIG_GOKE_BOARD
++endif
+ ifeq ($(CFG_GK_WIFI_GK6323AB),y)
+ ccflags-y += -DCONFIG_GK6323AB
+ endif
+@@ -241,7 +245,9 @@ endif
+ #ccflags-y += -DCONFIG_WCN_RESET
+ #ccflags-y += -DCONFIG_WCN_POWER_UP_DOWN
+ #ccflags-y += -DCONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX
++ifneq ($(TR100_NATIVE_SDIO),y)
+ ccflags-y += -DCONFIG_BT_WAKE_HOST_EN
++endif
+ #ccflags-y += -DCONFIG_WL_WAKE_HOST_EN
+ ccflags-y += -DCONFIG_WCN_RESUME_POWER_DOWN
+ #ccflags-y += -DCONFIG_WCN_RESUME_KEEPPWR_RESETSDIO
+diff --git a/BSP/platform/wcn_boot.c b/BSP/platform/wcn_boot.c
+index f0d2da0..0dacfde 100755
+--- a/BSP/platform/wcn_boot.c
++++ b/BSP/platform/wcn_boot.c
+@@ -2021,7 +2021,8 @@ static void marlin_send_sdio_config_to_cp_vendor(void)
+ 
+ #if (defined(CONFIG_HISI_BOARD) || defined(CONFIG_AML_BOARD) ||\
+ 	defined(CONFIG_RK_BOARD) || defined(CONFIG_AW_BOARD) ||\
+-	defined(CONFIG_MTK_BOARD) || defined(CONFIG_GOKE_BOARD))
++	defined(CONFIG_MTK_BOARD) || defined(CONFIG_GOKE_BOARD) || \
++ defined(CONFIG_TR100_BOARD))
+ 	/* Vendor config */
+ 
+ 	/* bit[0]: sdio_config_en:
+diff --git a/WIFI/Makefile b/WIFI/Makefile
+index 0536abd..4ba851d 100644
+--- a/WIFI/Makefile
++++ b/WIFI/Makefile
+@@ -30,8 +30,10 @@ ccflags-y += -I$(src)/../BSP/include/
+ # cannot affect that target -- see the matching comment/default in
+ # BSP/Makefile for WCN_FILLDIR_RETURNS_INT, the same situation for a
+ # different (and, confusingly, oppositely-stale) API.
++ifneq ($(TR100_NATIVE_SDIO),y)
+ ccflags-y += -DWCN_CFG80211_HAS_MLO_LINK_ID
+ ccflags-y += -DWCN_CFG80211_CH_SWITCH_NOTIFY_HAS_PUNCT_BITMAP
++endif
+ 
+ # sprdwl_ng calls symbols EXPORT_SYMBOL'd by uwe5621_bsp_sdio
+ # (sprdwcn_bus_*, start_marlin/stop_marlin, marlin_get_wcn_chipid,
+@@ -92,7 +94,9 @@ endif
+ ccflags-y += -DPPPOE_LLC_SUPPORT
+ #ccflags-y += -DSPRDWL_TX_SELF
+ #ccflags-y += -DTCP_ACK_DROP_SUPPORT
++ifneq ($(TR100_NATIVE_SDIO),y)
+ ccflags-y += -DWOW_SUPPORT
++endif
+ #ccflags-y += -DCPUFREQ_UPDATE_SUPPORT
+ #ccflags-y += -DCUSTOM_REGDOMAIN
+ #####module name ###
+diff --git a/WIFI/cfg80211.c b/WIFI/cfg80211.c
+index 2f303e9..0151474 100644
+--- a/WIFI/cfg80211.c
++++ b/WIFI/cfg80211.c
+@@ -4249,11 +4249,13 @@ struct sprdwl_priv *sprdwl_core_create(enum sprdwl_hw_type type,
+ 	int ret = 0;
+ 
+ 	sprdwl_check_intf_ops(ops);
+-	sprdwl_cmd_init();
++	if (sprdwl_cmd_init())
++		return NULL;
+ 
+ 	wiphy = wiphy_new(&sprdwl_cfg80211_ops, sizeof(*priv));
+ 	if (!wiphy) {
+ 		wl_err("failed to allocate wiphy!\n");
++		sprdwl_cmd_deinit();
+ 		return NULL;
+ 	}
+ 	priv = wiphy_priv(wiphy);
+@@ -4285,6 +4287,9 @@ struct sprdwl_priv *sprdwl_core_create(enum sprdwl_hw_type type,
+ 	ret = sprdwl_init_work(priv);
+ 	if (ret != 0) {
+ 		wl_err("sprdwl_init_work failed!\n");
++		wiphy_free(wiphy);
++		g_sprdwl_priv = NULL;
++		sprdwl_cmd_deinit();
+ 		return NULL;
+ 	}
+ 
+diff --git a/WIFI/cmdevt.c b/WIFI/cmdevt.c
+index 26004c5..223029f 100755
+--- a/WIFI/cmdevt.c
++++ b/WIFI/cmdevt.c
+@@ -253,6 +253,10 @@ int sprdwl_cmd_init(void)
+ 	struct sprdwl_cmd *cmd = &g_sprdwl_cmd;
+ 	/* memset(cmd, 0, sizeof(*cmd)); */
+ 	cmd->data = NULL;
++	cmd->wake_lock = NULL;
++	cmd->init_ok = 0;
++	atomic_set(&cmd->refcnt, 0);
++#if IS_ENABLED(CONFIG_PM_SLEEP)
+ #ifdef CONFIG_WIFI_RK_PM_PRIVATE_API
+ 	cmd->wake_lock = wakeup_source_register(sprdwl_dev,
+ 						"Wi-Fi_cmd_wakelock");
+@@ -267,6 +271,7 @@ int sprdwl_cmd_init(void)
+ 		wl_err("%s wakeup source register error.\n", __func__);
+ 		return -EINVAL;
+ 	}
++#endif /* CONFIG_PM_SLEEP */
+ 
+ 	spin_lock_init(&cmd->lock);
+ 	mutex_init(&cmd->cmd_lock);
+@@ -330,6 +335,8 @@ void sprdwl_cmd_deinit(void)
+ 	mutex_destroy(&cmd->cmd_lock);
+ 	if (cmd->wake_lock)
+ 		wakeup_source_unregister(cmd->wake_lock);
++	cmd->wake_lock = NULL;
++	cmd->init_ok = 0;
+ }
+ 
+ extern struct sprdwl_intf_ops g_intf_ops;
+diff --git a/WIFI/main.c b/WIFI/main.c
+index 7786372..9d4ba37 100644
+--- a/WIFI/main.c
++++ b/WIFI/main.c
+@@ -16,6 +16,14 @@
+  */
+ 
+ #include "sprdwl.h"
++/* Linux 5.10 dev_addr is writable; newer kernels provide the setter. */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0)
++static inline void tr100_eth_hw_addr_set(struct net_device *dev, const u8 *addr)
++{
++ memcpy(dev->dev_addr, addr, ETH_ALEN);
++}
++#define eth_hw_addr_set tr100_eth_hw_addr_set
++#endif
+ #include "npi.h"
+ #include "cfg80211.h"
+ #include "cmdevt.h"
+@@ -887,7 +895,10 @@ out:
+  * handler over unconditionally rather than juggling both callbacks.
+  */
+ static int sprdwl_ioctl(struct net_device *ndev, struct ifreq *req,
+-			 void __user *data, int cmd)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
++                         void __user *data,
++#endif
++                         int cmd)
+ {
+ 	struct sprdwl_vif *vif = netdev_priv(ndev);
+ 	struct iwreq *wrq = (struct iwreq *)req;
+@@ -1042,7 +1053,11 @@ static struct net_device_ops sprdwl_netdev_ops = {
+ 	.ndo_start_xmit = sprdwl_start_xmit,
+ 	.ndo_get_stats = sprdwl_get_stats,
+ 	.ndo_tx_timeout = sprdwl_tx_timeout,
+-	.ndo_siocdevprivate = sprdwl_ioctl,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
++ .ndo_siocdevprivate = sprdwl_ioctl,
++#else
++ .ndo_do_ioctl = sprdwl_ioctl,
++#endif
+ 	.ndo_set_mac_address = sprdwl_set_mac,
+ };
+ 
+diff --git a/WIFI/wl_core.c b/WIFI/wl_core.c
+index 140f078..6034d8f 100644
+--- a/WIFI/wl_core.c
++++ b/WIFI/wl_core.c
+@@ -723,12 +723,12 @@ static int sprdwl_probe(struct platform_device *pdev)
+ 		ret = -ENXIO;
+ 		goto err_core_create;
+ 	}
+-	memcpy(priv->wl_ver.kernel_ver, utsname()->release,
+-			strlen(utsname()->release));
+-	memcpy(priv->wl_ver.drv_ver, SPRDWL_DRIVER_VERSION,
+-			strlen(SPRDWL_DRIVER_VERSION));
+-	memcpy(priv->wl_ver.update, SPRDWL_UPDATE, strlen(SPRDWL_UPDATE));
+-	memcpy(priv->wl_ver.reserve, SPRDWL_RESERVE, strlen(SPRDWL_RESERVE));
++	strscpy(priv->wl_ver.kernel_ver, utsname()->release,
++        sizeof(priv->wl_ver.kernel_ver));
++ strscpy(priv->wl_ver.drv_ver, SPRDWL_DRIVER_VERSION,
++        sizeof(priv->wl_ver.drv_ver));
++ strscpy(priv->wl_ver.update, SPRDWL_UPDATE, sizeof(priv->wl_ver.update));
++ strscpy(priv->wl_ver.reserve, SPRDWL_RESERVE, sizeof(priv->wl_ver.reserve));
+ 	wl_info("Spreadtrum WLAN Version:");
+ 	wl_info("Kernel:%s,Driver:%s,update:%s,reserved:%s\n",
+ 			 utsname()->release, SPRDWL_DRIVER_VERSION,

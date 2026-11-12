@@ -1,0 +1,137 @@
+--- a/drivers/mmc/host/gkmciv300/gkmciv300.c
++++ b/drivers/mmc/host/gkmciv300/gkmciv300.c
+@@ -166,6 +166,9 @@
+ {
+ 	struct gkmciv300_host *host = mmc_priv(mmc);
+ 
++	if (host->tr100_fixed_wifi)
++		return 1;
++
+ 	if (host->force_unpluged) {
+ 		return 0;
+ 	}
+@@ -328,7 +331,8 @@
+ }
+ static void gkmciv300_mod_timer(struct gkmciv300_host *host)
+ {
+-	mod_timer(&(host)->detect_timer, (jiffies) + g_detect_time);
++	if (!host->tr100_fixed_wifi)
++		mod_timer(&(host)->detect_timer, (jiffies) + g_detect_time);
+ }
+ 
+ static void gkmciv300_detect_card(struct timer_list *t)
+@@ -1329,6 +1333,14 @@
+ 	of_property_read_u32(np, "max-frequency", &mmc->f_max);
+ 	of_property_read_u32(np, "wifi_reset_gpio", &g_wifi_reset_gpio);
+ 
++ /* Opt-in board power sequence; leave the proven eMMC path unchanged. */
++ if (of_find_property(np, "mmc-pwrseq", NULL)) {
++  ret = mmc_of_parse(mmc);
++  if (ret)
++   return ret;
++ }
++
++
+ 	if (of_property_read_u32(np, "ldo-addr", &ldo_addr) == 0) {
+ 		host->ldoaddr = ioremap_nocache(ldo_addr, 4); /* 4 */
+ 		if (IS_ERR_OR_NULL(host->ldoaddr)) {
+@@ -1394,17 +1406,15 @@
+ 
+ 	host->detect_timer.expires = jiffies + g_detect_time;
+ 
+-	add_timer(&host->detect_timer);
++	if (!host->tr100_fixed_wifi)
++		add_timer(&host->detect_timer);
+ 
+ 	init_waitqueue_head(&host->intr_wait);
+ }
+ static inline void gkmciv300_host_iounmap(struct gkmciv300_host *host, struct platform_device *pdev)
+ {
+ 	if (host) {
+-		if (host->ioaddr)
+-			iounmap(host->ioaddr);
+-		if (host->ioshare_addr)
+-			iounmap(host->ioshare_addr);
++		/* ioaddr and ioshare_addr are managed mappings, released by devres. */
+ 		if (host->ldoaddr)
+ 			iounmap(host->ldoaddr);
+ 		if (host->dma_vaddr)
+@@ -1412,6 +1422,34 @@
+ 					  host->dma_vaddr, host->dma_paddr);
+ 	}
+ }
++/* SDIO1 card-present override required by this soldered TR100 Wi-Fi. */
++static int gkmciv300_tr100_wifi_detect(struct platform_device *pdev,
++                                      struct gkmciv300_host *host)
++{
++ struct resource *res;
++ void __iomem *ctrl;
++
++ if (!of_property_read_bool(pdev->dev.of_node,
++                            "tr100,force-wifi-card-detect"))
++  return 0;
++ if (!(host->mmc->caps & MMC_CAP_NONREMOVABLE))
++  return -EINVAL;
++ res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++ if (!res || res->start != 0xf9c40000)
++  return -EINVAL;
++ res = platform_get_resource(pdev, IORESOURCE_MEM, 2);
++ if (!res || res->start != 0xf8a20008 || resource_size(res) < sizeof(u32))
++  return -EINVAL;
++ ctrl = devm_ioremap_resource(&pdev->dev, res);
++ if (IS_ERR(ctrl))
++  return PTR_ERR(ctrl);
++ writel(readl(ctrl) | BIT(0), ctrl);
++ readl(ctrl);
++ host->tr100_fixed_wifi = true;
++ dev_info(&pdev->dev, "TR100 fixed Wi-Fi card-detect enabled; hotplug timer disabled\n");
++ return 0;
++}
++
+ static int gkmciv300_pltm_probe(struct platform_device *pdev)
+ {
+ 	int ret;
+@@ -1455,6 +1493,12 @@
+ 
+ 	gkmciv300_host_init(host);
+ 
++ ret = gkmciv300_tr100_wifi_detect(pdev, host);
++ if (ret) {
++  clk_disable_unprepare(host->clk);
++  goto out;
++ }
++
+ 	gkmciv300_add_detect_timer(host, pdev);
+ 
+ 	ret = request_irq(host->irq, gkmciv300_irq, 0, DRVNAME, host);
+@@ -1498,10 +1542,7 @@
+ 		mmc_remove_host(mmc);
+ 		gkmciv300_host_power(host, false, false);
+ 		gkmciv300_control_cclk(host, false);
+-		if (host->ioaddr)
+-			iounmap(host->ioaddr);
+-		if (host->ioshare_addr)
+-			iounmap(host->ioshare_addr);
++		/* ioaddr and ioshare_addr are released by devres. */
+ 		if (host->ldoaddr)
+ 			iounmap(host->ldoaddr);
+ 		if (host->dma_vaddr)
+@@ -1691,6 +1732,7 @@
+ 		if (host->card_status != status)
+ 			host->card_detect_change = 1;
+ 
++		if (!host->tr100_fixed_wifi)
+ 		add_timer(&host->detect_timer);
+ 	}
+ 
+--- a/drivers/mmc/host/gkmciv300/gkmciv300.h
++++ b/drivers/mmc/host/gkmciv300/gkmciv300.h
+@@ -102,6 +102,8 @@
+ #define GKMCI_PEND_VOLT_SWITCH_b   (10)
+ #define GKMCI_PEND_VOLT_SWITCH_m   (1 << GKMCI_PEND_VOLT_SWITCH_b)
+ 	unsigned long      pending_events;
++	/* Validated soldered TR100 SDIO radio; no physical hotplug timer. */
++	bool tr100_fixed_wifi;
+ };
+ 
+ #define mci_readl(host, reg) \

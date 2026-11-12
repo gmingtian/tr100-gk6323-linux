@@ -1,0 +1,18 @@
+#!/usr/lib/tr100/busybox sh
+set -eu
+BB=/usr/lib/tr100/busybox
+[ -f /etc/tr100/personalized ] && [ -f /etc/tr100/factory-mac ] || { echo 'TR100: personalize the factory MAC and credentials before installation' >&2; exit 1; }
+mac=$(cat /etc/tr100/factory-mac)
+printf '%s\n' "$mac" | "$BB" grep -Eq '^([0-9a-f]{2}:){5}[0-9a-f]{2}$' || exit 1
+n=0
+while [ ! -d /sys/class/net/eth0 ]; do
+    n=$((n + 1)); [ "$n" -le 20 ] || exit 1
+    "$BB" sleep 1
+done
+"$BB" mkdir -p /run/tr100
+/usr/bin/ip link set dev lo up
+/usr/bin/ip link set dev eth0 down
+# Preserve the board's factory identity across Linux and bridged DHCP networks.
+/usr/bin/ip link set dev eth0 address "$mac"
+/usr/bin/ip link set dev eth0 up
+exec "$BB" udhcpc -f -i eth0 -s /usr/local/libexec/tr100-udhcpc-hook -p /run/tr100/udhcpc.pid

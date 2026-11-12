@@ -47,6 +47,15 @@ test('ARM64 console requires its exact matching image and kernel', () => {
     ['3.18.24_gk6323v100c', 'tr100-arm64-bookworm-20261111'],
   ]) assert.notEqual(invoke(kernel, tag).status, 0);
 });
+test('KVM ARM64 kernel accepts its matching persistent root and rejects lookalikes', () => {
+  const invoke = (kernel, tag, root='259:0 ext4') => run(`tr100_validate_identity Linux 0 '${kernel}' '${tag}' '${root}'`);
+  assert.equal(invoke('5.10.165_gk6323-tr100-arm64-kvm', 'tr100-arm64-bookworm-20261111').status, 0);
+  for (const [kernel, tag, root] of [
+    ['5.10.165_gk6323-tr100-arm64-kvm-extra', 'tr100-arm64-bookworm-20261111', '259:0 ext4'],
+    ['5.10.165_gk6323-tr100-arm64-kvm', 'tr100-pure-linux-20261111', '259:0 ext4'],
+    ['5.10.165_gk6323-tr100-arm64-kvm', 'tr100-arm64-bookworm-20261111', '0:2 rootfs'],
+  ]) assert.notEqual(invoke(kernel, tag, root).status, 0);
+});
 test('readback accepts the actual RGB565 geometry including fbset indentation', () => {
   const r = run(`tr100_validate_mode $'mode "1280x720"\n    geometry 1280 720 1280 2160 16\n    rgba 5/11,6/5,5/0,0/0\nendmode'`);
   assert.equal(r.status, 0, r.stderr);

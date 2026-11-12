@@ -4,6 +4,7 @@ After=systemd-udev-settle.service
 Before=tr100-hdmi-console.service
 ConditionKernelVersion=|5.10.165_gk6323-tr100-docker
 ConditionKernelVersion=|5.10.165_gk6323-tr100-arm64
+ConditionKernelVersion=|5.10.165_gk6323-tr100-arm64-kvm
 
 [Service]
 Type=oneshot

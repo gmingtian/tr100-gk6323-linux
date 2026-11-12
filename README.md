@@ -1,10 +1,22 @@
-# TR100 纯 Linux 工具源码
+# TR100 / GK6323 ARM64 Linux 适配
 
-面向数码视讯 TR100 / GK6323V100C 的实验性、设备绑定 Linux 适配工具。基础方案使用 Armbian Bookworm armhf、本机原厂 3.18.24 内核和厂商引导固件；后续已在本机完成 5.10.165 内核、原生 Docker 和 HDMI 适配，见下方记录。这里不包含内核或厂商二进制，也不宣称官方通用板型支持。
+面向数码视讯 TR100 / GK6323V100C 的实验性 Linux 适配。已完成 Linux 5.10.165 ARM64、Debian Bookworm arm64 适配及原生 Docker 验证，支持真实 EL2/KVM、ARMv7 应用兼容、TUN、IPv4/IPv6 TPROXY、HDMI 文字登录及 CPU 温度读取，保留显示后台线程的低负载修复。板载 SDIO Wi-Fi 已完成自动加载和双频扫描；常用 USB 网卡、摄像头、声卡、存储及蜂窝网卡驱动按需加载，光驱与光盘文件系统已编入内核。具体外设仍需实测，不保证所有型号可用。
+
+当前适配与构建入口见 [ARM64 说明](arm64/README.md)。CPU 保持原厂 1.2 GHz，沿用原厂 loader 和 ATF。仓库中的 Armbian Bookworm armhf / 原厂 3.18.24 流程属于早期方案，不代表当前系统；其他 TR100 批次尚未验证。
+
+## 下载与构建
+
+- [下载发布镜像和完整预备源码](https://github.com/gmingtian/tr100-gk6323-linux/releases)：内核分区镜像、干净 Debian ARM64 系统、运行时驱动与 SHA256 清单。系统默认不安装 Docker。
+- [刷入指南](arm64/QUICKSTART.md)：先填写目标设备 MAC 和本地登录凭据，再经 TTL/RAM 维护环境写入 p3、p8；无需重新编译内核。
+- [工具说明](arm64/TOOLS.md)：运行位置、参数、输入输出、校验与备份恢复。
+- [源码来源与引用](arm64/SOURCES.md)：OpenHarmony 内核、Goke 平台与 SDK、无线驱动、固件和 Debian 的上游地址、锁定版本及许可证说明。
+- [内核和全部驱动构建](arm64/build/README.md)、[干净系统构建](arm64/ROOTFS.md)：固定公开源码版本与补丁，支持在另一台 Linux 电脑复用。
+
+公开镜像不包含私人密码、SSH 主机密钥或机器身份。镜像、预备源码包与构建输入通过 Release 提供；Git 仓库保留维护代码、补丁、锁定版本和测试。固件属于二进制输入，不宣称为本项目开放源码。
 
 仓库只选择项目脚本、按系统配置定制的覆盖层、静态布局、说明和测试。镜像、备份、设备日志、机器身份、密码、私钥、第三方源码/运行时/安装包及本机输入 JSON 均不随源码提交。原始二进制中的 SHA/UUID 是安全门禁，不是可下载固件或兼容性证明。没有为厂商代码授予许可证；当前未擅自添加仓库许可证，复用前须另行确认相应文件权利。
 
-## 刷入指南
+## 早期 ARMHF 刷入指南
 
 [中文刷入指南](docs/TR100纯Linux刷入指南.html) 是自包含 HTML，可下载后用浏览器打开并复制命令；包含 RAM 维护、临时/最终环境切换、写入和故障处理。不要在 GitHub HTML 源码预览页直接复制带页面行号的命令。生成源为 docs/build_flashing_guide.py（Python 3 标准库），不会连接设备。
 
@@ -15,6 +27,7 @@
 - `firmware-analysis/board-pure-linux-initrd/`：小 initrd 的固定 p8 门禁与 PID1 交接源码。
 - `firmware-analysis/tools/`：小 initrd/newc/Android wrapper 构建工具、TFTP/RAM loader、被动捕获及相应测试。
 - `tools/`：固定本地文件 TCP 传输和 RAMONLY 大镜像封装；原相对路径保持不变。
+- `arm64/`：当前 64 位内核与显示适配补丁、配置、温度驱动、板载 Wi-Fi 服务、用户态构建工具及功能验证程序。
 
 最终设计将前 42MiB 用于必需的厂商引导/硬件参数与 kernel，剩余 7,774,142,464B 全部交给 Linux p8；完整用户区为 7,818,182,656B。它不是 HiTool Android 升级包。旧 800MiB p16 镜像和所有实际产物均被忽略，历史说明中的原机路径/旧布局引用不是当前安装输入。
 
@@ -22,7 +35,7 @@
 
 ## HDMI 文字终端
 
-[HDMI 安装与回退](hdmi/README.md)：使用 RGB565 + fbterm 在 tty1 提供本地密码登录，不安装图形桌面。包含开机服务和离线测试，SSH 与 ttyAMA0 保留。原基础镜像不包含此后续配置，刷入后需按该说明选装。
+[HDMI 安装与回退](hdmi/README.md)：使用 RGB565 + fbterm 在 tty1 提供本地密码登录，不安装图形桌面。当前 ARM64 系统构建已集成该配置；早期基础镜像需按独立说明选装。包含开机服务和离线测试，SSH 与 ttyAMA0 保留。
 
 ## 原生 Docker 与 5.10 内核
 
@@ -53,7 +66,7 @@ npm run test:device-fixtures
 - `firmware-analysis/ram-test/RAMONLY-bookworm-full-boot-v2/` 九片及 manifest。
 - `firmware-analysis/board-pure-linux/research/probe-environment/probe-candidate/` 本地 probe binary/receipt；缺失时可在拥有原环境后用生成器重新离线创建。
 
-构建实际 root/boot 或组包还需要官方用户态来源、经校验的内核/模块/BusyBox、本机 prefix 与 canonical root 等本地输入。源码只提供工具，不下载、上传或伪造这些材料。输入 schema 见 `firmware-pure-linux/package-inputs.template.json`，真实含绝对本机路径的 `final-package-inputs.json` 被忽略。
+早期 ARMHF root/boot 组包还需要官方用户态来源、经校验的内核/模块/BusyBox、本机 prefix 与 canonical root 等本地输入。这组历史工具不下载或伪造这些材料。输入 schema 见 `firmware-pure-linux/package-inputs.template.json`，真实含绝对本机路径的 `final-package-inputs.json` 被忽略；当前 ARM64 的源码取得和干净系统构建入口见上方链接。
 
 ## 操作边界
 

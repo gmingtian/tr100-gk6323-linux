@@ -1,0 +1,11 @@
+--- a/cfg.mak
++++ b/cfg.mak
+@@ -161,7 +161,7 @@
+ CFG_GK_KERNEL_CFG=gk6323v100c_ohos_defconfig
+ # CFG_GK_FS_BUILDIN is not set
+ # CFG_GK_MSP_BUILDIN is not set
+-CFG_GK_MSP_BUILDIN=y
++# CFG_GK_MSP_BUILDIN is not set
+ #
+ # Filesystem
+ #

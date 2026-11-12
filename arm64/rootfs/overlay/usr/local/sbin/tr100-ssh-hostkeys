@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+[ -f /etc/tr100/personalized ] || { echo 'TR100: SSH disabled until local personalization' >&2; exit 1; }
+umask 077
+/usr/bin/ssh-keygen -A

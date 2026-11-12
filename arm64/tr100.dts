@@ -126,6 +126,7 @@
 
 	interrupt-controller {
 		compatible = "arm,gic-v3";
+		interrupts = <1 9 4>; /* GIC virtual maintenance PPI 25. */
 		#interrupt-cells = <0x03>;
 		#address-cells = <0x00>;
 		interrupt-controller;
@@ -492,10 +493,10 @@
 			interrupts = <0x00 0x56 0x04>;
 			clocks = <0x0a 0x28c>;
 			clock-names = "clk";
-			caps = <0x8007000f>;
+			caps = <0x8000000f>;
 			caps2 = <0x4000>;
 			max-frequency = <0x2faf080>;
-			status = "disabled";
+			status = "okay";
 			wifi_reset_gpio = <0x23>;
 		};
 
@@ -659,4 +660,22 @@
 			method = "smc";
 		};
 	};
+};
+
+/* Native TR100 power sequence; UHS remains disabled in the base. */
+/ {
+    tr100_wifi_pwrseq: wifi-pwrseq {
+        compatible = "mmc-pwrseq-simple";
+        reset-gpios = <&{/soc/amba/gpio4} 3 1>; /* GPIO4_3, active low */
+        post-power-on-delay-ms = <100>;
+    };
+};
+
+&{/soc/gkmciv200.SD@f9c40000} {
+    status = "okay";
+    bus-width = <4>;
+    mmc-pwrseq = <&tr100_wifi_pwrseq>;
+    non-removable;
+    post-power-on-delay-ms = <100>;
+    tr100,force-wifi-card-detect;
 };

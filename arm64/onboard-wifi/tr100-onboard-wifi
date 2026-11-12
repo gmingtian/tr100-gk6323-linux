@@ -1,0 +1,31 @@
+#!/bin/sh
+# Native SDIO/pwrseq brings the radio up; do not reset an already bound chip.
+set -eu
+[ "$(id -u)" = 0 ]
+[ "$(uname -r)" = 5.10.165_gk6323-tr100-arm64-kvm ]
+[ "$(cat /etc/tr100/image-tag)" = tr100-arm64-bookworm-20261111 ]
+[ -f /sys/firmware/devicetree/base/soc/gkmciv200.SD@f9c40000/mmc-pwrseq ]
+found=0
+for radio in /sys/bus/sdio/devices/*; do
+    [ -d "$radio" ] || continue
+    case "$(readlink -f "$radio")" in
+        */f9c40000.gkmciv200.SD/*) ;;
+        *) continue ;;
+    esac
+    [ "$(cat "$radio/vendor")" = 0x0000 ] || continue
+    [ "$(cat "$radio/device")" = 0x0000 ] || continue
+    found=1
+    break
+done
+[ "$found" = 1 ] || { echo 'TR100 onboard SDIO radio not found' >&2; exit 1; }
+/sbin/modprobe uwe5621_bsp_sdio
+/sbin/modprobe sprdwl_ng
+found=0
+for radio in /sys/devices/platform/unisoc_wifi/net/*; do
+    [ -d "$radio" ] || continue
+    interface=${radio##*/}
+    /sbin/ip link set dev "$interface" up
+    echo "TR100 onboard Wi-Fi ready: $interface; no network profile configured"
+    found=1
+done
+[ "$found" = 1 ]
