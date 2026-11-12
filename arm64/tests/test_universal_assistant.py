@@ -59,6 +59,8 @@ class CapturedSerial:
             _, _, _, addr, start, count = cmd.split()
             self.loaded = int(start, 16)
             count = int(count,16) - int(self.short_read)
+            if getattr(self, 'too_small', False) and self.loaded >= 15267840:
+                count = 0
             out = f'MMC read: dev # 0, block # {self.loaded}, count {count} ...\r\n{count} blocks read: OK\r\n'
         elif cmd.startswith('crc32 '):
             _, addr, size = cmd.split()
@@ -110,6 +112,12 @@ class ProtocolTests(unittest.TestCase):
             console = p.SerialConsole(serial, timeout=.01); console.connect()
             with self.assertRaises(p.PolicyError): p.preflight(console, MANIFEST, 'f'*64)
             self.assertFalse(any(c.startswith(('setenv','mw.','saveenv')) for c in serial.commands))
+    def test_too_small_emmc_stops_before_any_environment_write(self):
+        self.serial.too_small = True
+        with self.assertRaises(p.PolicyError):
+            self.inspect()
+        self.assertFalse(any(c.startswith(('setenv','saveenv')) for c in self.serial.commands))
+
     def test_changed_protected_crc_prevents_every_environment_write(self):
         report = self.inspect(); self.serial.crcs[53248] = '00000000'
         with self.assertRaises(p.PolicyError): p.apply(self.console, MANIFEST, 'f'*64, report)

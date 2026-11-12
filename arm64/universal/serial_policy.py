@@ -235,6 +235,9 @@ def preflight(console, manifest, manifest_sha256):
     env_text = console.command('printenv')
     env = parse_environment(env_text)
     check_factory_layout(env['bootargs'])
+    # Prove the entire rootfs write window fits before any flash step. This
+    # read is still inside the user area; firstboot checks exact disk geometry.
+    _read(console, 7455, MIB)
     crcs, mac = {}, None
     for name, start, size in PROTECTED:
         _read(console, start, size * MIB)
