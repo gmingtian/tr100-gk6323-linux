@@ -11,6 +11,7 @@
 | `rootfs/build.py` | Linux root 或 ARM64 Docker worker | 准备/恢复干净 rootfs、配置身份、审计、导出 tar/ext4 |
 | `tools/receive-backups.py` | 同局域网电脑 | 接收指定 TR100 上传的原始 p2/p3，返回 SHA256 |
 | `tools/flash-from-ram.sh` | TR100 的 TTL RAM shell | 校验私人镜像、备份、写 p8/p3、完整读回并恢复只读 |
+| `tools/make_hitool_package.py` | Linux 电脑，Python 与 debugfs | 为已验证的目标机导出 HiTool XML 与三个私人 IMG，见 [HiTool 说明](hitool/README.md) |
 | `tests/kvm-real-probe.c` | 编译后在 TR100 运行 | 让真实 KVM 客体在四个物理 CPU 分别执行，检查 MMIO 返回值 |
 
 ## 下载与封装

@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Partition_Info ProgrammerFile="">
+  <Part Sel="0" PartitionName="fastboot" FlashType="emmc" FileSystem="none" Start="0" Length="4M" SelectFile="" />
+  <Part Sel="1" PartitionName="bootargs" FlashType="emmc" FileSystem="none" Start="4M" Length="4M" SelectFile="bootargs.img" />
+  <Part Sel="1" PartitionName="kernel" FlashType="emmc" FileSystem="none" Start="8M" Length="12M" SelectFile="kernel.img" />
+  <Part Sel="0" PartitionName="deviceinfo" FlashType="emmc" FileSystem="none" Start="20M" Length="4M" SelectFile="" />
+  <Part Sel="0" PartitionName="atf" FlashType="emmc" FileSystem="none" Start="24M" Length="2M" SelectFile="" />
+  <Part Sel="0" PartitionName="baseparam" FlashType="emmc" FileSystem="none" Start="26M" Length="8M" SelectFile="" />
+  <Part Sel="0" PartitionName="pqparam" FlashType="emmc" FileSystem="none" Start="34M" Length="8M" SelectFile="" />
+  <Part Sel="1" PartitionName="rootfs" FlashType="emmc" FileSystem="ext3/4" Start="42M" Length="7414M" SelectFile="rootfs.img" />
+</Partition_Info>

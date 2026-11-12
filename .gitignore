@@ -253,3 +253,8 @@
 !/arm64/usb-firmware/verification/
 /arm64/usb-firmware/verification/*
 !/arm64/usb-firmware/verification/trusted-regdb.pem
+
+!/arm64/hitool/
+/arm64/hitool/*
+!/arm64/hitool/*.xml
+!/arm64/hitool/*.md
