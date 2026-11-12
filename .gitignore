@@ -258,3 +258,15 @@
 /arm64/hitool/*
 !/arm64/hitool/*.xml
 !/arm64/hitool/*.md
+
+# Universal installer sources only; never media images, sessions or factory data.
+!/arm64/universal/
+/arm64/universal/**
+!/arm64/universal/**/
+!/arm64/universal/**/*.py
+!/arm64/universal/**/*.md
+!/arm64/universal/**/*.sh
+!/arm64/universal/**/*.cmd
+!/arm64/universal/**/requirements.txt
+!/arm64/universal/firstboot/tr100-firstboot
+!/arm64/universal/firstboot/*.service

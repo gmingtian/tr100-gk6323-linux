@@ -136,11 +136,15 @@ def rebuild_environment(original, bootargs, dtb_size):
     return bytes(result)
 
 
-def check_kernel(data, mac):
+def check_kernel(data, mac, *, generic=False):
     path = Path(__file__).resolve().parents[1] / 'build/pack.py'
     spec = importlib.util.spec_from_file_location('tr100_pack', path)
     pack = importlib.util.module_from_spec(spec); spec.loader.exec_module(pack)
-    expected_mac = pack.parse_mac(mac)
+    if generic:
+        check(mac == '02:00:00:00:00:01', 'generic kernel requires exact template MAC')
+        expected_mac = bytes.fromhex(mac.replace(':', ''))
+    else:
+        expected_mac = pack.parse_mac(mac)
     fields = list(struct.unpack('>7I4B32s', data[:64]))
     check(fields[0] == 0x27051956 and fields[3] <= 8 * MIB - 64,
           'invalid legacy kernel header/size')

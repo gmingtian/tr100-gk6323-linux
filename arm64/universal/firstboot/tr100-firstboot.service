@@ -1,0 +1,21 @@
+[Unit]
+Description=TR100 universal media factory identity and owner password setup
+Wants=systemd-udev-settle.service
+After=local-fs.target systemd-udev-settle.service
+Before=tr100-network.service ssh.service serial-getty@ttyAMA0.service tr100-hdmi-console.service
+ConditionPathExists=!/etc/tr100/personalized
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/tr100-firstboot
+RemainAfterExit=yes
+TimeoutStartSec=infinity
+StandardInput=tty
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/ttyAMA0
+TTYReset=yes
+TTYVHangup=yes
+
+[Install]
+WantedBy=multi-user.target

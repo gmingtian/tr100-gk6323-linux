@@ -1,0 +1,129 @@
+#!/usr/lib/tr100/busybox sh
+# Universal media: read existing hardware identity; write only rootfs configuration.
+set -eu
+set -o pipefail
+BB=/usr/lib/tr100/busybox
+
+tr100_fail() {
+    printf 'TR100_FIRSTBOOT_FAILED: %s\nNetworking and login remain blocked.\n' "$*" >&2
+    return 1
+}
+
+tr100_validate_geometry() {
+    [ "$#" -eq 4 ] && [ "$1" = 15269888 ] && [ "$2" = 86016 ] &&
+        [ "$3" = 15183872 ] && [ "$4" = 259:0 ]
+}
+
+tr100_validate_partition_geometry() {
+    [ "$#" -eq 3 ] || return 1
+    case "$1:$2:$3" in
+        1:0:8192|2:8192:8192|3:16384:24576|4:40960:8192|5:49152:4096|6:53248:16384|7:69632:16384|8:86016:15183872) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+tr100_read_factory_mac() {
+    # od checks all 17 original bytes, so NUL/newline stripping by command
+    # substitution cannot turn corrupt deviceinfo into a valid identity.
+    local hex mac first
+    hex=$("$BB" od -An -tx1 -N17 "$1" | "$BB" tr -d ' \n') || return 1
+    [ "${#hex}" -eq 34 ] || return 1
+    mac=$("$BB" dd if="$1" bs=17 count=1 2>/dev/null) || return 1
+    [ "${#mac}" -eq 17 ] || return 1
+    printf '%s\n' "$mac" | "$BB" grep -Eq '^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$' || return 1
+    case "$mac" in 00:00:00:00:00:00|02:00:00:00:00:00|02:00:00:00:00:01) return 1 ;; esac
+    first=${mac%%:*}
+    [ "$((0x$first & 1))" -eq 0 ] || return 1
+    printf '%s\n' "$mac" | "$BB" tr A-F a-f
+}
+
+tr100_check_device_node() {
+    local node hexmajor hexminor actual
+    node=$1
+    [ -b "/dev/$node" ] && [ ! -L "/dev/$node" ] || return 1
+    hexmajor=$("$BB" stat -c %t "/dev/$node") || return 1
+    hexminor=$("$BB" stat -c %T "/dev/$node") || return 1
+    actual=$(printf '%d:%d' "0x$hexmajor" "0x$hexminor") || return 1
+    [ "$actual" = "$("$BB" cat "/sys/class/block/$node/dev")" ]
+}
+
+tr100_validate_board() {
+    local part node digest
+    tr100_check_device_node mmcblk0 || { tr100_fail 'eMMC device node mismatch'; return 1; }
+    for part in 1 2 3 4 5 6 7 8; do
+        node=mmcblk0p$part
+        tr100_check_device_node "$node" || { tr100_fail "partition $part device node mismatch"; return 1; }
+        tr100_validate_partition_geometry "$part" \
+            "$("$BB" cat "/sys/class/block/$node/start")" \
+            "$("$BB" cat "/sys/class/block/$node/size")" || { tr100_fail "partition $part layout mismatch"; return 1; }
+    done
+    tr100_validate_geometry "$("$BB" cat /sys/class/block/mmcblk0/size)" \
+        "$("$BB" cat /sys/class/block/mmcblk0p8/start)" \
+        "$("$BB" cat /sys/class/block/mmcblk0p8/size)" \
+        "$("$BB" cat /sys/class/block/mmcblk0p8/dev)" || { tr100_fail 'unsupported disk/root geometry'; return 1; }
+    "$BB" awk '$5 == "/" && $3 == "259:0" {ok=1} END {exit !ok}' /proc/self/mountinfo || {
+        tr100_fail 'root is not the expected installed p8'; return 1;
+    }
+    # Hash the complete verified-size protected partitions, without opening for write.
+    digest=$("$BB" sha256sum /dev/mmcblk0p1) || return 1
+    [ "${digest%% *}" = fdc8847fafd9ef5ca006cb414561b99464b344deba1c16f8c223c0916f2c521e ] || {
+        tr100_fail 'unsupported 4 MiB loader'; return 1;
+    }
+    digest=$("$BB" sha256sum /dev/mmcblk0p5) || return 1
+    [ "${digest%% *}" = 4ff6abeff404e8eeb0f0f3816470b3d65a9261c2ed75c6e4ce48fbf7fcc2f939 ] || {
+        tr100_fail 'unsupported ATF'; return 1;
+    }
+}
+
+tr100_install_personality() {
+    local config ssh mac tmp
+    config=$1 ssh=$2 mac=$3
+    [ ! -L "$config" ] && [ ! -L "$ssh" ] || return 1
+    umask 077
+    "$BB" mkdir -p "$config" "$ssh"
+    # Each replacement is atomic; personalized is the final durable commit marker.
+    tmp=$("$BB" mktemp "$ssh/.tr100-ssh.XXXXXX")
+    printf '%s\n' 'PermitRootLogin yes' 'PasswordAuthentication yes' \
+        'PubkeyAuthentication yes' 'KbdInteractiveAuthentication no' \
+        'PermitEmptyPasswords no' > "$tmp"
+    "$BB" chmod 644 "$tmp"
+    "$BB" mv -f "$tmp" "$ssh/00-tr100.conf"
+    tmp=$("$BB" mktemp "$config/.factory-mac.XXXXXX")
+    printf '%s\n' "$mac" > "$tmp"
+    "$BB" chmod 600 "$tmp"
+    "$BB" mv -f "$tmp" "$config/factory-mac"
+    "$BB" rm -f "$config/needs-personalization"
+    "$BB" sync
+    tmp=$("$BB" mktemp "$config/.personalized.XXXXXX")
+    printf 'local credentials configured\n' > "$tmp"
+    "$BB" chmod 600 "$tmp"
+    "$BB" mv -f "$tmp" "$config/personalized"
+    "$BB" sync
+}
+
+tr100_firstboot_main() {
+    local mac retry
+    [ "$#" -eq 0 ] || { tr100_fail 'no command arguments are accepted'; return 1; }
+    [ ! -e /etc/tr100/personalized ] || return 0
+    export LC_ALL=C
+    [ "$("$BB" id -u)" = 0 ] || { tr100_fail 'root privileges required'; return 1; }
+    [ -t 0 ] && [ -t 1 ] || { tr100_fail 'connect the TTL serial console ttyAMA0'; return 1; }
+    printf '\nTR100 first boot: checking existing hardware identity.\n'
+    tr100_validate_board
+    mac=$(tr100_read_factory_mac /dev/mmcblk0p4) || { tr100_fail 'invalid factory deviceinfo MAC'; return 1; }
+    printf '\nTR100_FIRSTBOOT_PASSWORD_SETUP\n'
+    printf 'Set your own root password on this TTL serial console.\nEnter it twice when passwd asks. There is no default password.\n'
+    # passwd owns the terminal and disables echo. Never read, store, pipe, or log
+    # plaintext passwords in this script, its arguments, or systemd's journal.
+    while ! /usr/bin/passwd root; do
+        printf '\nPassword setup failed. Press Enter to retry on this console: '
+        IFS= read -r retry || return 1
+    done
+    "$BB" awk -F: '$1 == "root" {n++; if ($2 ~ /^\$(y|6|5|2[aby])\$/) ok=1} END {exit !(n == 1 && ok)}' /etc/shadow || {
+        tr100_fail 'root password is still locked or invalid'; return 1;
+    }
+    tr100_install_personality /etc/tr100 /etc/ssh/sshd_config.d "$mac"
+    printf '\nTR100_FIRSTBOOT_COMPLETE\nFactory identity restored. Owner password configured. Continuing startup.\n'
+}
+
+tr100_firstboot_main "$@"

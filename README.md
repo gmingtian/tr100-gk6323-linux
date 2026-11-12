@@ -9,6 +9,7 @@
 - [下载发布镜像和完整预备源码](https://github.com/gmingtian/tr100-gk6323-linux/releases)：内核分区镜像、干净 Debian ARM64 系统、运行时驱动与 SHA256 清单。系统默认不安装 Docker。
 - [刷入指南](arm64/QUICKSTART.md)：先填写目标设备 MAC 和本地登录凭据，再经 TTL/RAM 维护环境写入 p3、p8；无需重新编译内核。
 - [工具说明](arm64/TOOLS.md)：运行位置、参数、输入输出、校验与备份恢复。
+- [同硬件通用包（预览）](arm64/universal/README.md)：保护原厂分区，首次开机自动读取本机 MAC、设置自己的密码；仅支持已知引导/布局，尚未完成第二台设备的 HiTool 实刷验证。
 - [HiTool XML 导出](arm64/hitool/README.md)：为已核验的 4 MiB 引导版本生成私人 XML/IMG 包；HiTool 实机烧写尚未验证。
 - [源码来源与引用](arm64/SOURCES.md)：OpenHarmony 内核、Goke 平台与 SDK、无线驱动、固件和 Debian 的上游地址、锁定版本及许可证说明。
 - [内核和全部驱动构建](arm64/build/README.md)、[干净系统构建](arm64/ROOTFS.md)：固定公开源码版本与补丁，支持在另一台 Linux 电脑复用。

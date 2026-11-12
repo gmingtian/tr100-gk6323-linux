@@ -2,7 +2,7 @@
 
 本目录保存 2026-11-11 至 12 日实机适配的增量源代码、内核配置及验证程序。已验证原生 AArch64 Linux 5.10.165、Debian Bookworm arm64、Docker arm64 和真实 EL2/KVM，保留 ARMv7 应用兼容、HDMI RGB565 文字控制台和四个显示后台线程的空闲等待修复。Docker 属于可选用户态服务。CPU 保持原厂 1.2 GHz，未部署超频驱动。蓝牙未作驱动操作。
 
-直接安装见 [刷入指南](QUICKSTART.md) 和 [工具说明](TOOLS.md)；在新电脑构建见 [内核构建](build/README.md)、[系统构建](ROOTFS.md) 和 [离线重建](REBUILD.md)。公共镜像下载地址位于仓库 Releases，需先设置目标 MAC 与自己的登录凭据。
+直接安装见 [刷入指南](QUICKSTART.md) 和 [工具说明](TOOLS.md)；在新电脑构建见 [内核构建](build/README.md)、[系统构建](ROOTFS.md) 和 [离线重建](REBUILD.md)。公共镜像下载地址位于仓库 Releases；手动安装需先设置目标 MAC 与自己的登录凭据。另有[同硬件通用包预览](universal/README.md)，通过电脑助手与首次启动服务自动保留目标身份，不复制原机参数；暂只支持已知 4MiB loader 配置，第二台设备实刷待验证。
 
 ## 源码基线和补丁顺序
 
